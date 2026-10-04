@@ -12,6 +12,30 @@ dist
 dist-ssr
 *.local
 
+# Python and ML datasets
+.venv/
+**/.venv/
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*.cache
+ml/dataset/
+Microcontroller Detection/
+
+# Training checkpoints and generated run artifacts (keep the browser ONNX model)
+ml/models/*/weights/*.pt
+ml/models/*/args.yaml
+ml/models/*/data_absolute.yaml
+ml/models/*/results.csv
+ml/models/*/results.png
+ml/models/*/Box*.png
+ml/models/*/confusion_matrix*.png
+ml/models/*/labels.jpg
+ml/models/*/train_batch*.jpg
+ml/models/*/val_batch*.jpg
+ml/models/*/training_summary.json
+ml/models/*/evaluation/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -22,3 +46,5 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+.vercel

@@ -1,0 +1,1206 @@
+.arduino-execution-feature {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  color: var(--text);
+}
+
+.execution-feature-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 22px;
+  padding: 2px 0 4px;
+}
+
+.execution-feature-header h2 {
+  margin-top: 8px;
+  font-family: 'Manrope', 'Segoe UI', sans-serif;
+  font-size: clamp(1.45rem, 2.5vw, 2rem);
+}
+
+.execution-feature-header p {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.6;
+}
+
+.execution-controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.execution-controls .primary-button,
+.execution-controls .secondary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.execution-status,
+.execution-step-count,
+.execution-language {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 11px;
+  border: 1px solid rgba(132, 154, 161, 0.17);
+  border-radius: 999px;
+  background: rgba(18, 25, 27, 0.78);
+  color: var(--muted);
+  font: 500 0.62rem var(--mono);
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+}
+
+.execution-status > i,
+.circuit-status > i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--dim);
+}
+
+.execution-status.is-complete {
+  border-color: rgba(141, 224, 192, 0.3);
+  color: var(--mint);
+}
+
+.execution-status.is-complete > i {
+  background: var(--mint);
+  box-shadow: 0 0 10px rgba(141, 224, 192, 0.68);
+}
+
+.execution-status.is-running {
+  border-color: rgba(97, 217, 221, 0.35);
+  color: var(--cyan);
+}
+
+.execution-status.is-running > i {
+  background: var(--cyan);
+  box-shadow: 0 0 9px var(--cyan);
+  animation: pulse 900ms ease-in-out infinite alternate;
+}
+
+.execution-main-grid,
+.execution-detail-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+  align-items: start;
+  gap: 16px;
+}
+
+.execution-path-panel,
+.circuit-panel,
+.execution-code-panel,
+.execution-register-panel {
+  min-width: 0;
+  padding: 18px;
+}
+
+.execution-step-count {
+  padding: 6px 9px;
+  border-radius: 8px;
+  color: var(--cyan);
+  font-size: 0.57rem;
+}
+
+.execution-steps {
+  display: flex;
+  flex-direction: column;
+  margin-top: 6px;
+}
+
+.execution-step {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-height: 90px;
+  padding: 12px 11px 15px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  color: var(--muted);
+  transition: color 180ms ease, background 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.execution-step.is-active {
+  border-color: rgba(97, 217, 221, 0.4);
+  background: linear-gradient(100deg, rgba(97, 217, 221, 0.11), rgba(97, 217, 221, 0.025));
+  color: var(--text);
+  box-shadow: 0 0 20px rgba(97, 217, 221, 0.08), inset 0 0 18px rgba(97, 217, 221, 0.025);
+}
+
+.execution-step.is-complete {
+  color: var(--mint);
+}
+
+.execution-step-state {
+  display: grid;
+  flex: 0 0 28px;
+  width: 28px;
+  aspect-ratio: 1;
+  place-items: center;
+  border: 1px solid rgba(132, 154, 161, 0.22);
+  border-radius: 8px;
+  color: var(--dim);
+  font: 0.62rem var(--mono);
+}
+
+.execution-step.is-active .execution-step-state {
+  border-color: var(--cyan);
+  background: rgba(97, 217, 221, 0.14);
+  color: var(--cyan);
+  box-shadow: 0 0 12px rgba(97, 217, 221, 0.18);
+}
+
+.execution-step.is-complete .execution-step-state {
+  border-color: rgba(141, 224, 192, 0.45);
+  background: rgba(141, 224, 192, 0.1);
+  color: var(--mint);
+}
+
+.execution-step-copy {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.execution-step-kind {
+  color: var(--dim);
+  font: 0.55rem var(--mono);
+  letter-spacing: 0.12em;
+}
+
+.execution-step.is-active .execution-step-kind {
+  color: var(--cyan);
+}
+
+.execution-step-copy strong {
+  overflow-wrap: anywhere;
+  color: var(--text);
+  font: 500 0.77rem var(--mono);
+}
+
+.execution-step-copy p {
+  color: var(--muted);
+  font-size: 0.65rem;
+  line-height: 1.5;
+}
+
+.execution-step-connector {
+  position: relative;
+  display: grid;
+  flex: 0 0 18px;
+  height: 18px;
+  place-items: center;
+  border: 1px solid rgba(132, 154, 161, 0.17);
+  border-radius: 50%;
+}
+
+.execution-step-connector i {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--dim);
+}
+
+.execution-step.is-active .execution-step-connector {
+  border-color: var(--cyan);
+  box-shadow: 0 0 13px rgba(97, 217, 221, 0.28);
+}
+
+.execution-step.is-active .execution-step-connector i {
+  background: var(--cyan);
+  box-shadow: 0 0 8px var(--cyan);
+  animation: execution-signal 850ms ease-in-out infinite alternate;
+}
+
+.execution-step-arrow {
+  position: absolute;
+  bottom: -8px;
+  left: 18px;
+  z-index: 1;
+  color: var(--dim);
+}
+
+.execution-step.is-complete .execution-step-arrow {
+  color: var(--mint);
+}
+
+@keyframes execution-signal {
+  from { transform: translateY(-2px); opacity: 0.55; }
+  to { transform: translateY(2px); opacity: 1; }
+}
+
+.execution-hardware-column {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.execution-board-visual .board-pin.selected {
+  border-color: var(--cyan);
+  box-shadow: 0 0 16px rgba(97, 217, 221, 0.32), inset 0 0 10px rgba(97, 217, 221, 0.12);
+}
+
+.execution-board-visual .led-dot.on {
+  background: var(--mint);
+  box-shadow: 0 0 14px rgba(141, 224, 192, 0.9);
+}
+
+.execution-signal-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 39px;
+  padding: 8px 12px;
+  border: 1px solid rgba(132, 154, 161, 0.14);
+  border-radius: 10px;
+  background: rgba(18, 25, 27, 0.8);
+  color: var(--dim);
+  font: 0.67rem var(--mono);
+  transition: border-color 180ms ease, color 180ms ease, box-shadow 180ms ease;
+}
+
+.execution-signal-label.is-active {
+  border-color: rgba(97, 217, 221, 0.36);
+  color: var(--cyan);
+  box-shadow: 0 0 17px rgba(97, 217, 221, 0.09);
+}
+
+.execution-signal-label > i {
+  display: grid;
+  place-items: center;
+  color: var(--dim);
+}
+
+.execution-signal-label.is-active > i {
+  color: var(--cyan);
+  animation: execution-arrow 900ms ease-in-out infinite alternate;
+}
+
+.execution-signal-label small {
+  color: var(--muted);
+  font: 0.57rem var(--mono);
+}
+
+@keyframes execution-arrow {
+  to { transform: translateX(4px); }
+}
+
+.circuit-panel .panel-heading {
+  align-items: center;
+}
+
+.circuit-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--muted);
+  font: 0.53rem var(--mono);
+  letter-spacing: 0.06em;
+  text-align: right;
+}
+
+.circuit-status.is-flowing {
+  color: var(--mint);
+}
+
+.circuit-status.is-flowing > i {
+  background: var(--mint);
+  box-shadow: 0 0 9px rgba(141, 224, 192, 0.8);
+}
+
+.circuit-sequence {
+  display: grid;
+  justify-items: center;
+  margin-top: 8px;
+  padding: 8px 0 2px;
+  color: var(--muted);
+  font: 0.65rem var(--mono);
+}
+
+.circuit-source {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 11px;
+  border: 1px solid rgba(97, 217, 221, 0.22);
+  border-radius: 8px;
+  background: rgba(97, 217, 221, 0.045);
+}
+
+.circuit-source-pin {
+  color: var(--cyan);
+}
+
+.circuit-wire {
+  position: relative;
+  width: 2px;
+  height: 17px;
+  background: rgba(132, 154, 161, 0.36);
+  overflow: hidden;
+}
+
+.circuit-wire i {
+  position: absolute;
+  top: -5px;
+  left: -2px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--mint);
+  opacity: 0;
+}
+
+.circuit-sequence.current-active .circuit-wire i {
+  opacity: 1;
+  box-shadow: 0 0 8px var(--mint);
+  animation: current-flow 950ms linear infinite;
+}
+
+.circuit-sequence.current-active .circuit-wire:nth-of-type(4) i {
+  animation-delay: 280ms;
+}
+
+.circuit-sequence.current-active .circuit-wire:nth-of-type(6) i {
+  animation-delay: 560ms;
+}
+
+@keyframes current-flow {
+  from { transform: translateY(0); }
+  to { transform: translateY(22px); }
+}
+
+.circuit-resistor {
+  display: grid;
+  width: 82px;
+  height: 28px;
+  place-items: center;
+  border: 1px solid rgba(237, 180, 109, 0.55);
+  border-radius: 5px;
+  background: linear-gradient(90deg, rgba(237, 180, 109, 0.08), rgba(237, 180, 109, 0.18), rgba(237, 180, 109, 0.08));
+  color: var(--amber);
+  font-size: 0.59rem;
+}
+
+.circuit-led-node {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 3px 10px;
+  transition: color 180ms ease;
+}
+
+.circuit-led-symbol {
+  position: relative;
+  display: block;
+  width: 25px;
+  height: 18px;
+  border: 1px solid rgba(132, 154, 161, 0.5);
+  border-radius: 50% 50% 4px 4px;
+  background: rgba(132, 154, 161, 0.1);
+}
+
+.circuit-led-symbol::after {
+  position: absolute;
+  right: -5px;
+  bottom: -4px;
+  left: -5px;
+  height: 1px;
+  background: var(--muted);
+  content: '';
+}
+
+.circuit-led-symbol i,
+.circuit-led-symbol i::after {
+  position: absolute;
+  width: 7px;
+  height: 1px;
+  background: var(--dim);
+  transform: rotate(-45deg);
+}
+
+.circuit-led-symbol i {
+  top: -4px;
+  right: -7px;
+}
+
+.circuit-led-symbol i::after {
+  top: -5px;
+  left: 4px;
+  content: '';
+}
+
+.circuit-led-node.is-on {
+  color: var(--mint);
+}
+
+.circuit-led-node.is-on .circuit-led-symbol {
+  border-color: var(--mint);
+  background: rgba(141, 224, 192, 0.5);
+  box-shadow: 0 0 19px rgba(97, 217, 221, 0.54), 0 0 34px rgba(141, 224, 192, 0.2);
+}
+
+.circuit-led-node.is-on .circuit-led-symbol::before {
+  position: absolute;
+  inset: -15px -14px;
+  border: 1px solid rgba(97, 217, 221, 0.3);
+  border-radius: 50%;
+  content: '';
+  animation: led-rays 1.4s ease-in-out infinite alternate;
+}
+
+.circuit-ground {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  color: var(--muted);
+  font-size: 0.57rem;
+}
+
+.circuit-ground i {
+  display: block;
+  height: 1px;
+  background: rgba(151, 166, 170, 0.72);
+}
+
+.circuit-ground i:nth-of-type(1) { width: 22px; }
+.circuit-ground i:nth-of-type(2) { width: 14px; }
+.circuit-ground i:nth-of-type(3) { width: 6px; }
+
+@keyframes led-rays {
+  from { opacity: 0.35; transform: scale(0.92); }
+  to { opacity: 1; transform: scale(1.08); }
+}
+
+.execution-detail-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.execution-language {
+  border-radius: 7px;
+  padding: 6px 8px;
+  font-size: 0.53rem;
+}
+
+.execution-code {
+  overflow-x: auto;
+  margin: 14px 0 0;
+  padding: 13px 0;
+  border: 1px solid rgba(132, 154, 161, 0.12);
+  border-radius: 9px;
+  background: rgba(12, 17, 19, 0.74);
+  color: var(--muted);
+  font: 0.68rem/1.9 var(--mono);
+}
+
+.execution-code-line {
+  display: block;
+  min-width: max-content;
+  padding: 0 14px;
+  transition: color 180ms ease, background 180ms ease;
+}
+
+.execution-code-line.is-highlighted {
+  border-left: 2px solid var(--cyan);
+  background: rgba(97, 217, 221, 0.1);
+  color: var(--accent-light);
+}
+
+.execution-code-blank {
+  height: 0.7em;
+}
+
+.execution-code-result {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 11px;
+  color: var(--dim);
+  font: 0.61rem var(--mono);
+  transition: color 180ms ease;
+}
+
+.execution-code-result.is-on {
+  color: var(--mint);
+}
+
+.register-rows {
+  display: grid;
+  gap: 6px;
+  margin-top: 11px;
+}
+
+.execution-register-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 35px;
+  padding: 7px 9px;
+  border: 1px solid rgba(132, 154, 161, 0.1);
+  border-radius: 7px;
+  background: rgba(12, 17, 19, 0.48);
+  color: var(--muted);
+  font-size: 0.63rem;
+}
+
+.execution-register-row strong {
+  min-width: 43px;
+  color: var(--text);
+  font: 0.68rem var(--mono);
+}
+
+.execution-register-row.is-active {
+  border-color: rgba(97, 217, 221, 0.27);
+  background: rgba(97, 217, 221, 0.055);
+}
+
+.execution-register-row.is-active strong {
+  color: var(--cyan);
+}
+
+.execution-register-value {
+  color: var(--cyan);
+  font: 0.58rem var(--mono);
+}
+
+.register-bits {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 5px;
+  margin-top: 14px;
+}
+
+.register-bits > span {
+  display: grid;
+  min-width: 0;
+  gap: 5px;
+  justify-items: center;
+  padding: 6px 2px;
+  border: 1px solid rgba(132, 154, 161, 0.13);
+  border-radius: 6px;
+  background: rgba(12, 17, 19, 0.55);
+}
+
+.register-bits small {
+  color: var(--dim);
+  font: 0.5rem var(--mono);
+}
+
+.register-bits strong {
+  color: var(--muted);
+  font: 0.67rem var(--mono);
+}
+
+.register-bits > span.is-active {
+  border-color: rgba(97, 217, 221, 0.62);
+  background: rgba(97, 217, 221, 0.16);
+  box-shadow: 0 0 13px rgba(97, 217, 221, 0.14);
+}
+
+.register-bits > span.is-active small,
+.register-bits > span.is-active strong {
+  color: var(--cyan);
+}
+
+.register-bit-caption {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 9px;
+  color: var(--muted);
+  font: 0.53rem var(--mono);
+}
+
+.register-bit-caption i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--dim);
+}
+
+.register-bit-caption.is-active i {
+  background: var(--cyan);
+  box-shadow: 0 0 7px var(--cyan);
+}
+
+.execution-explanation {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 17px 19px;
+  border: 1px solid rgba(97, 217, 221, 0.16);
+  border-radius: 13px;
+  background: linear-gradient(110deg, rgba(97, 217, 221, 0.065), rgba(25, 33, 36, 0.8) 48%);
+}
+
+.execution-explanation-icon {
+  display: grid;
+  width: 34px;
+  aspect-ratio: 1;
+  place-items: center;
+  border: 1px solid rgba(97, 217, 221, 0.28);
+  border-radius: 9px;
+  color: var(--cyan);
+  font: 0.63rem var(--mono);
+}
+
+.execution-explanation h3 {
+  margin-top: 4px;
+  color: var(--text);
+  font-size: 0.81rem;
+}
+
+.execution-explanation p {
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 0.65rem;
+  line-height: 1.55;
+}
+
+.execution-summary {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--text);
+  font: 0.55rem var(--mono);
+  white-space: nowrap;
+}
+
+.execution-summary i {
+  color: var(--cyan);
+  font-style: normal;
+}
+
+.execution-simulation-note {
+  color: var(--dim);
+  font: 0.54rem var(--mono);
+  letter-spacing: 0.09em;
+  text-align: right;
+}
+
+@media (max-width: 1180px) {
+  .execution-main-grid,
+  .execution-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .execution-hardware-column {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(210px, 0.7fr);
+    align-items: start;
+  }
+
+  .execution-board-visual {
+    grid-row: span 2;
+  }
+
+  .execution-signal-label {
+    align-self: end;
+  }
+}
+
+@media (max-width: 700px) {
+  .execution-feature-header {
+    flex-direction: column;
+  }
+
+  .execution-controls {
+    justify-content: flex-start;
+  }
+
+  .execution-controls .execution-status {
+    margin-right: auto;
+  }
+
+  .execution-path-panel,
+  .circuit-panel,
+  .execution-code-panel,
+  .execution-register-panel {
+    padding: 14px;
+  }
+
+  .execution-hardware-column {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .execution-board-visual {
+    grid-row: auto;
+  }
+
+  .execution-summary {
+    grid-column: 2;
+  }
+}
+
+@media (max-width: 420px) {
+  .execution-controls {
+    width: 100%;
+  }
+
+  .execution-controls .primary-button {
+    flex: 1;
+    padding-inline: 9px;
+    font-size: 0.62rem;
+  }
+
+  .execution-controls .secondary-button {
+    padding-inline: 9px;
+    font-size: 0.62rem;
+  }
+
+  .execution-step {
+    gap: 8px;
+    padding-inline: 7px;
+  }
+
+  .execution-step-copy strong {
+    font-size: 0.68rem;
+  }
+
+  .execution-step-copy p {
+    font-size: 0.61rem;
+  }
+
+  .circuit-status {
+    max-width: 125px;
+    line-height: 1.45;
+  }
+}
+
+.execution-status.is-error {
+  border-color: rgba(237, 180, 109, 0.38);
+  color: var(--amber);
+}
+
+.execution-status.is-error > i {
+  background: var(--amber);
+  box-shadow: 0 0 8px rgba(237, 180, 109, 0.55);
+}
+
+.execution-validation-message {
+  padding: 10px 12px;
+  border: 1px solid rgba(237, 180, 109, 0.25);
+  border-radius: 8px;
+  background: rgba(237, 180, 109, 0.055);
+  color: var(--amber);
+  font-size: 0.7rem;
+}
+
+.execution-empty-state {
+  padding: 22px 12px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  line-height: 1.6;
+}
+
+.execution-pcb-panel {
+  min-width: 0;
+  overflow: hidden;
+  padding: 18px 14px 12px;
+  background: linear-gradient(155deg, rgba(25, 34, 36, 0.96), rgba(13, 19, 20, 0.98));
+}
+
+.execution-pcb-panel .panel-heading {
+  margin: 0 4px 4px;
+}
+
+.execution-pcb-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+  font-family: var(--mono);
+}
+
+.execution-pcb-svg text {
+  fill: rgba(220, 235, 224, 0.78);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.5px;
+}
+
+.execution-pcb-svg .pcb-base {
+  fill: url(#uno-solder-mask);
+  stroke: #75a88c;
+  stroke-width: 2;
+}
+
+.execution-pcb-svg .pcb-edge {
+  fill: none;
+  stroke: rgba(8, 34, 25, 0.7);
+  stroke-width: 2;
+}
+
+.execution-pcb-svg .pcb-mount-holes circle:nth-of-type(odd) {
+  fill: #b1beb5;
+  stroke: #5d7065;
+  stroke-width: 1.5;
+}
+
+.execution-pcb-svg .pcb-mount-holes circle:nth-of-type(even) {
+  fill: #192320;
+  stroke: #75877b;
+  stroke-width: 1;
+}
+
+.execution-pcb-svg .pcb-traces path {
+  fill: none;
+  stroke: rgba(160, 196, 113, 0.26);
+  stroke-width: 2;
+}
+
+.execution-pcb-svg .pcb-traces circle {
+  fill: #a7be72;
+  opacity: 0.65;
+}
+
+.execution-pcb-svg .pcb-usb > path {
+  fill: url(#uno-usb-shell);
+  stroke: #c0cbc5;
+  stroke-width: 2;
+}
+
+.execution-pcb-svg .pcb-usb rect:first-of-type {
+  fill: #566967;
+  stroke: #d0d7d2;
+  stroke-width: 1.5;
+}
+
+.execution-pcb-svg .pcb-usb rect:last-of-type {
+  fill: #131b1c;
+  stroke: #87948d;
+}
+
+.execution-pcb-svg .pcb-usb text,
+.execution-pcb-svg .pcb-power-jack text {
+  fill: #d8dfd8;
+  font-size: 8px;
+}
+
+.execution-pcb-svg .pcb-power-jack rect {
+  fill: #1c2524;
+  stroke: #718079;
+  stroke-width: 2;
+}
+
+.execution-pcb-svg .pcb-power-jack circle:first-of-type {
+  fill: #313e3b;
+  stroke: #9ba69e;
+  stroke-width: 2;
+}
+
+.execution-pcb-svg .pcb-power-jack circle:last-of-type {
+  fill: #101717;
+  stroke: #87948d;
+}
+
+.execution-pcb-svg .pcb-small-parts rect {
+  fill: #202726;
+  stroke: #b7bf9f;
+  stroke-width: 1.3;
+}
+
+.execution-pcb-svg .pcb-small-parts circle {
+  fill: #c2a36a;
+}
+
+.execution-pcb-svg .pcb-small-parts path {
+  stroke: #c7b376;
+  stroke-width: 1.4;
+}
+
+.execution-pcb-svg .pcb-small-parts text {
+  fill: rgba(222, 233, 219, 0.7);
+  font-size: 7px;
+}
+
+.execution-pcb-svg .pcb-header-label {
+  fill: rgba(224, 237, 224, 0.78);
+  font-size: 8px;
+  font-weight: 500;
+}
+
+.execution-pcb-svg .pcb-header-base {
+  fill: #141918;
+  stroke: #737f73;
+  stroke-width: 1;
+}
+
+.execution-pcb-svg .pcb-header-pin rect {
+  fill: #b48e4b;
+  stroke: #e1c17a;
+  stroke-width: 0.8;
+}
+
+.execution-pcb-svg .pcb-header-pin circle,
+.execution-pcb-svg .pcb-lower-pin circle {
+  fill: #17201d;
+  stroke: #d0ac64;
+  stroke-width: 2;
+}
+
+.execution-pcb-svg .pcb-header-pin text,
+.execution-pcb-svg .pcb-lower-pin text {
+  fill: rgba(224, 234, 219, 0.8);
+  font-size: 7px;
+}
+
+.execution-pcb-svg .pcb-header-pin.is-highlighted rect {
+  fill: #55c8b7;
+  stroke: #b4fff0;
+  filter: drop-shadow(0 0 5px rgba(97, 217, 221, 0.9));
+}
+
+.execution-pcb-svg .pcb-header-pin.is-highlighted circle {
+  fill: #dcfff0;
+  stroke: #64eee0;
+}
+
+.execution-pcb-svg .pcb-header-pin.is-highlighted text {
+  fill: #a4fff0;
+  font-weight: 700;
+}
+
+.execution-pcb-svg .pcb-branding .pcb-logo {
+  fill: #d9e6dc;
+  font-family: 'Manrope', sans-serif;
+  font-size: 31px;
+}
+
+.execution-pcb-svg .pcb-brand-name {
+  fill: #dce8dc;
+  font-family: 'Manrope', sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+}
+
+.execution-pcb-svg .pcb-brand-version {
+  fill: #c8d9cc;
+  font-size: 9px;
+}
+
+.execution-pcb-svg .pcb-signal-trace {
+  fill: none;
+  stroke: rgba(218, 178, 99, 0.62);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.execution-pcb-svg .pcb-signal-trace.is-active {
+  stroke: #64e4dd;
+  filter: drop-shadow(0 0 4px rgba(97, 217, 221, 0.8));
+}
+
+.execution-pcb-svg .pcb-signal-label {
+  fill: rgba(247, 211, 128, 0.86);
+  font-size: 8px;
+}
+
+.execution-pcb-svg .pcb-signal-label.is-active {
+  fill: #83fff0;
+}
+
+.execution-pcb-svg .pcb-component-label,
+.execution-pcb-svg .pcb-pin-function {
+  fill: rgba(219, 233, 218, 0.66);
+  font-size: 7px;
+}
+
+.execution-pcb-svg .pcb-chip-body {
+  fill: #171c1d;
+  stroke: #aeb7ac;
+  stroke-width: 1.5;
+}
+
+.execution-pcb-svg .pcb-chip-leg {
+  fill: #b8c1b9;
+  stroke: #e0e5dd;
+  stroke-width: 0.6;
+}
+
+.execution-pcb-svg .pcb-chip-notch {
+  fill: none;
+  stroke: #aeb7ac;
+  stroke-width: 2;
+}
+
+.execution-pcb-svg .pcb-chip-pin-one {
+  fill: #e2d09c;
+}
+
+.execution-pcb-svg .pcb-chip-name {
+  fill: #e0e4dc;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.execution-pcb-svg .pcb-chip-caption {
+  fill: #9ba89e;
+  font-size: 8px;
+}
+
+.execution-pcb-svg .pcb-led > circle:first-child {
+  fill: #26312d;
+  stroke: #aeb8a8;
+  stroke-width: 1.5;
+}
+
+.execution-pcb-svg .pcb-led-core {
+  fill: #637367;
+}
+
+.execution-pcb-svg .pcb-led text {
+  fill: #e1e8de;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.execution-pcb-svg .pcb-led.is-on .pcb-led-core {
+  fill: #9dffc9;
+  filter: drop-shadow(0 0 7px #8dffc5);
+}
+
+.execution-pcb-svg .pcb-revision {
+  fill: rgba(211, 226, 209, 0.6);
+  font-size: 7px;
+}
+
+.circuit-schematic {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-top: 8px;
+  overflow: visible;
+  font-family: var(--mono);
+}
+
+.circuit-schematic text {
+  font-family: var(--mono);
+}
+
+.schematic-caption {
+  fill: var(--muted);
+  font-size: 10px;
+  letter-spacing: 0.8px;
+}
+
+.schematic-output {
+  fill: rgba(97, 217, 221, 0.06);
+  stroke: rgba(97, 217, 221, 0.56);
+  stroke-width: 1.5;
+}
+
+.schematic-output-label {
+  fill: var(--cyan);
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.schematic-output-sub {
+  fill: var(--muted);
+  font-size: 11px;
+}
+
+.schematic-wire {
+  fill: none;
+  stroke: #a2b2ad;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.schematic-resistor {
+  fill: none;
+  stroke: #d5aa61;
+  stroke-width: 4;
+  stroke-linecap: square;
+  stroke-linejoin: bevel;
+}
+
+.schematic-component-label {
+  fill: #d9e0d9;
+  font-size: 11px;
+}
+
+.schematic-diode {
+  fill: rgba(132, 154, 161, 0.18);
+  stroke: #b8c5bd;
+  stroke-width: 2;
+}
+
+.schematic-diode-bar,
+.schematic-ray {
+  fill: none;
+  stroke: #b8c5bd;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+
+.schematic-ground {
+  fill: none;
+  stroke: #a2b2ad;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.schematic-ground-label {
+  fill: var(--muted);
+  font-size: 11px;
+}
+
+.schematic-flow-dot {
+  fill: var(--mint);
+  opacity: 0;
+  filter: drop-shadow(0 0 4px rgba(141, 224, 192, 0.9));
+}
+
+.circuit-schematic.is-on .schematic-wire {
+  stroke: #8de0c0;
+}
+
+.circuit-schematic.is-on .schematic-diode {
+  fill: rgba(141, 224, 192, 0.54);
+  stroke: #aaffd0;
+  filter: drop-shadow(0 0 8px rgba(97, 217, 221, 0.7));
+}
+
+.circuit-schematic.is-on .schematic-diode-bar,
+.circuit-schematic.is-on .schematic-ray {
+  stroke: #aaffd0;
+  filter: drop-shadow(0 0 4px rgba(141, 224, 192, 0.7));
+}
+
+.circuit-schematic.is-on .schematic-flow-dot {
+  opacity: 1;
+}
+
+@media (max-width: 420px) {
+  .execution-pcb-panel {
+    padding: 14px 8px 8px;
+  }
+
+  .execution-pcb-svg text {
+    font-size: 9px;
+  }
+
+  .schematic-caption {
+    font-size: 9px;
+  }
+}

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Activity, ArrowRight, BookOpen, Cable, ChevronRight, CircleHelp, Code2, Cpu, Gauge, LayoutDashboard, Lightbulb, Menu, Settings2, Usb, X } from 'lucide-react'
+import { Activity, ArrowRight, BookOpen, Cable, Camera, ChevronRight, CircleHelp, Code2, Cpu, Gauge, LayoutDashboard, Lightbulb, Menu, Settings2, Usb, X } from 'lucide-react'
 import { ArduinoBoard } from './components/ArduinoBoard'
+import { CameraScanner } from './components/CameraScanner'
 import { CodeVisualizer } from './components/CodeVisualizer'
 import { PeripheralMapper } from './components/PeripheralMapper'
 import { PinExplorer } from './components/PinExplorer'
@@ -9,7 +10,7 @@ import { analogPins, digitalPins, getPin, pinMap, type PeripheralName, type PinL
 import { microBoardSerial, type SerialInfo } from './services/serial'
 import './App.css'
 
-type PageId = 'dashboard' | 'pin-explorer' | 'peripheral-mapper' | 'code-visualizer' | 'register-viewer' | 'hardware-monitor' | 'learn-mode' | 'settings'
+type PageId = 'dashboard' | 'pin-explorer' | 'peripheral-mapper' | 'code-visualizer' | 'camera-scanner' | 'register-viewer' | 'hardware-monitor' | 'learn-mode' | 'settings'
 
 type BoardState = {
   mode: PinMode | null
@@ -21,6 +22,7 @@ const navItems: { id: PageId; label: string; icon: typeof Activity; group: strin
   { id: 'pin-explorer', label: 'Pin Explorer', icon: Cpu, group: 'WORKSPACE' },
   { id: 'peripheral-mapper', label: 'Peripheral Mapper', icon: Cable, group: 'WORKSPACE' },
   { id: 'code-visualizer', label: 'Code Visualizer', icon: Code2, group: 'WORKSPACE' },
+  { id: 'camera-scanner', label: 'Camera Scanner', icon: Camera, group: 'WORKSPACE' },
   { id: 'register-viewer', label: 'Register Viewer', icon: Activity, group: 'HARDWARE' },
   { id: 'hardware-monitor', label: 'Hardware Monitor', icon: Gauge, group: 'HARDWARE' },
   { id: 'learn-mode', label: 'Learn Mode', icon: BookOpen, group: 'MORE' },
@@ -94,6 +96,7 @@ function App() {
   const [toast, setToast] = useState('')
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const [activeLesson, setActiveLesson] = useState(0)
+  const [generatedDesignCode, setGeneratedDesignCode] = useState<string | null>(null)
   const [reducedMotion, setReducedMotion] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches)
   const pin = getPin(selectedPin)
   const ledOn = modes.D13 === 'OUTPUT' && levels.D13 === 'HIGH'
@@ -275,7 +278,9 @@ function App() {
       case 'peripheral-mapper':
         return <PeripheralMapper activePeripheral={activePeripheral} selectedPin={selectedPin} onPeripheralChange={setActivePeripheral} onSelectPin={setSelectedPin} />
       case 'code-visualizer':
-        return <CodeVisualizer onSimulationChange={updateSimulation} onSelectPin={setSelectedPin} reducedMotion={reducedMotion} />
+        return <CodeVisualizer key={generatedDesignCode ?? 'starter'} initialCode={generatedDesignCode ?? undefined} onSimulationChange={updateSimulation} onSelectPin={setSelectedPin} reducedMotion={reducedMotion} />
+      case 'camera-scanner':
+        return <CameraScanner onOpenCodeVisualizer={(code) => { setGeneratedDesignCode(code); navigate('code-visualizer') }} />
       case 'register-viewer':
         return <RegisterViewer selectedPin={pin} modes={modes} levels={levels} onSelectPin={setSelectedPin} onTogglePin={(pinId) => { if (modes[pinId] === 'OUTPUT') setLevels((current) => ({ ...current, [pinId]: current[pinId] === 'HIGH' ? 'LOW' : 'HIGH' })); else setToast('Set this pin to OUTPUT in Pin Explorer before toggling its output level.') }} />
       case 'hardware-monitor':
@@ -294,7 +299,7 @@ function App() {
       case 'settings':
         return <SettingsPage reducedMotion={reducedMotion} onChangeMotion={setReducedMotion} onReset={() => { setModes(initialState('INPUT')); setLevels(initialState('LOW')); setPhysicalPins({}); setToast('Virtual pin state reset.') }} />
       default:
-        return <Dashboard selectedPin={selectedPin} mode={modes[selectedPin]} level={levels[selectedPin]} ledOn={ledOn} serialInfo={serialInfo} onNavigate={navigate} onSelectPin={selectAndExplore} onConnect={handleConnectArduino} />
+        return <Dashboard selectedPin={selectedPin} mode={modes[selectedPin]} level={levels[selectedPin]} ledOn={ledOn} serialInfo={serialInfo} serialAvailable={serialInfo.isAvailable} onNavigate={navigate} onSelectPin={selectAndExplore} onConnect={handleConnectArduino} />
     }
   }
 
@@ -304,7 +309,7 @@ function App() {
       <main className="main-area">
         <header className="topbar">
           <div className="topbar-left"><button className="mobile-menu icon-button" type="button" onClick={() => setMobileNavOpen((open) => !open)} aria-label="Toggle navigation"><Menu size={19} /></button><div className="breadcrumbs"><span>MICROBOARD</span><ChevronRight size={13} /><strong>{navItems.find((item) => item.id === page)?.label.toUpperCase()}</strong></div></div>
-          <div className="topbar-right"><span className="connection-status"><i /> PHYSICAL: {serialInfo.state === 'connected' ? 'CONNECTED' : serialInfo.state === 'connecting' ? 'CONNECTING...' : serialInfo.state === 'error' ? 'ERROR' : 'DISCONNECTED'}</span><span className="topbar-divider" /><span className="target-chip"><Cpu size={14} /> SIMULATION: ACTIVE</span><button className="connect-button" type="button" onClick={handleConnectArduino} disabled={serialInfo.state === 'connecting'}><Usb size={15} /><span>{isPhysicalConnected ? 'Disconnect Arduino' : serialInfo.state === 'connecting' ? 'Selecting device...' : 'Connect Arduino'}</span></button></div>
+          <div className="topbar-right"><span className="connection-status"><i /> PHYSICAL: {serialInfo.state === 'connected' ? 'CONNECTED' : serialInfo.state === 'connecting' ? 'CONNECTING...' : serialInfo.state === 'error' ? 'ERROR' : 'DISCONNECTED'}</span><span className="topbar-divider" /><span className="target-chip"><Cpu size={14} /> SIMULATION: ACTIVE</span><button className="connect-button" type="button" onClick={handleConnectArduino} disabled={!serialInfo.isAvailable || serialInfo.state === 'connecting'} title={!serialInfo.isAvailable ? 'Web Serial is unavailable in this browser.' : undefined}><Usb size={15} /><span>{isPhysicalConnected ? 'Disconnect Arduino' : serialInfo.state === 'connecting' ? 'Selecting device...' : serialInfo.isAvailable ? 'Connect Arduino' : 'Web Serial unavailable'}</span></button></div>
         </header>
         <div className="content-area" key={page}>{renderPage()}</div>
         <footer className="app-footer"><span><i /> SIMULATION ENVIRONMENT</span><span>UNO R3 <b>·</b> ATMEGA328P <b>·</b> 16 MHz</span></footer>
@@ -326,13 +331,31 @@ function Sidebar({ page, onNavigate, mobileOpen, serialInfo }: { page: PageId; o
   </>
 }
 
-function Dashboard({ selectedPin, mode, level, ledOn, serialInfo, onNavigate, onSelectPin, onConnect }: { selectedPin: string; mode: PinMode; level: PinLevel; ledOn: boolean; serialInfo: SerialInfo; onNavigate: (page: PageId) => void; onSelectPin: (pinId: string) => void; onConnect: () => void }) {
+function Dashboard({ selectedPin, mode, level, ledOn, serialInfo, serialAvailable, onNavigate, onSelectPin, onConnect }: { selectedPin: string; mode: PinMode; level: PinLevel; ledOn: boolean; serialInfo: SerialInfo; serialAvailable: boolean; onNavigate: (page: PageId) => void; onSelectPin: (pinId: string) => void; onConnect: () => void }) {
   const pin = getPin(selectedPin)
   return <div className="page-stack dashboard-page">
-    <div className="dashboard-intro"><div><span className="eyebrow">ENGINEERING WORKSPACE / 01</span><h1>See what happens <em>inside.</em></h1><p>Trace an Arduino call through the ATmega328P, register by register.</p></div><button type="button" className="connect-status-card" onClick={onConnect}><span className="connection-led" /><span><strong>PHYSICAL ARDUINO CONNECTION</strong><small>{serialInfo.state === 'connected' ? 'CONNECTED · live USB session' : 'DISCONNECTED · simulation mode active'}</small></span><Usb size={17} /></button></div>
+    <div className="dashboard-intro"><div><span className="eyebrow">ENGINEERING WORKSPACE / 01</span><h1>See what happens <em>inside.</em></h1><p>Trace an Arduino call through the ATmega328P, register by register.</p></div><button type="button" className="connect-status-card" onClick={onConnect} disabled={!serialAvailable || serialInfo.state === 'connecting'} title={!serialAvailable ? 'Web Serial is unavailable in this browser.' : undefined}><span className="connection-led" /><span><strong>PHYSICAL ARDUINO CONNECTION</strong><small>{!serialAvailable ? 'WEB SERIAL UNAVAILABLE' : serialInfo.state === 'connected' ? 'CONNECTED · live USB session' : 'DISCONNECTED · simulation mode active'}</small></span><Usb size={17} /></button></div>
     <section className="stats-grid">{[{ title: 'Digital pins', value: '14', note: 'D0 — D13', icon: Activity }, { title: 'Analog inputs', value: '06', note: '10-bit ADC', icon: Gauge }, { title: 'PWM outputs', value: '06', note: 'Timer controlled', icon: Activity }, { title: 'ADC channels', value: '06', note: 'A0 — A5', icon: Cpu }].map(({ title, value, note, icon: Icon }, index) => <div className={`stat-card stat-${index}`} key={title}><span className="stat-icon"><Icon size={16} /></span><span className="stat-label">{title}</span><strong>{value}</strong><small>{note}</small><span className="stat-corner" /></div>)}</section>
     <div className="dashboard-content-grid"><ArduinoBoard selectedPin={selectedPin} onSelectPin={onSelectPin} ledOn={ledOn} /><div className="dashboard-side"><section className="panel current-pin-panel"><div className="panel-heading"><div><span className="eyebrow">CURRENTLY SELECTED</span><h2>Pin snapshot</h2></div><button className="text-link" type="button" onClick={() => onNavigate('pin-explorer')}>EXPLORE <ArrowRight size={13} /></button></div><div className="snapshot-map"><div><small>ARDUINO</small><strong>{pin.id}</strong></div><ArrowRight size={19} /><div><small>ATMEGA328P</small><strong>{pin.mcuPin}</strong></div></div><div className="snapshot-register">PORT {pin.port} <i /> BIT {pin.bit}</div><div className="snapshot-functions">{pin.functions.map((fn) => <span key={fn}>{fn}</span>)}</div><div className="snapshot-state"><span>{mode} <i /> {level}</span>{pin.id === 'D13' && <strong className={ledOn ? 'led-on' : ''}><Lightbulb size={13} /> LED {ledOn ? 'ON' : 'OFF'}</strong>}</div></section>
-      <section className="panel quick-panel"><div className="panel-heading"><div><span className="eyebrow">SHORTCUTS</span><h2>Quick actions</h2></div></div><div className="quick-actions">{[{ text: 'Pin Explorer', page: 'pin-explorer' as PageId, icon: Cpu }, { text: 'Code Visualizer', page: 'code-visualizer' as PageId, icon: Code2 }, { text: 'Register Viewer', page: 'register-viewer' as PageId, icon: Activity }, { text: 'Peripheral Mapper', page: 'peripheral-mapper' as PageId, icon: Cable }].map(({ text, page: targetPage, icon: Icon }) => <button type="button" key={text} onClick={() => onNavigate(targetPage)}><Icon size={15} /><span>{text}</span><ArrowRight size={14} /></button>)}</div></section></div></div>
+      <section className="panel quick-panel"><div className="panel-heading"><div><span className="eyebrow">SHORTCUTS</span><h2>Quick actions</h2></div></div><div className="quick-actions">{[{ text: 'Pin Explorer', page: 'pin-explorer' as PageId, icon: Cpu }, { text: 'Code Visualizer', page: 'code-visualizer' as PageId, icon: Code2 }, { text: 'Camera Scanner', page: 'camera-scanner' as PageId, icon: Camera }, { text: 'Register Viewer', page: 'register-viewer' as PageId, icon: Activity }, { text: 'Peripheral Mapper', page: 'peripheral-mapper' as PageId, icon: Cable }].map(({ text, page: targetPage, icon: Icon }) => <button type="button" key={text} onClick={() => onNavigate(targetPage)}><Icon size={15} /><span>{text}</span><ArrowRight size={14} /></button>)}</div></section></div></div>
+    <section className="panel scanner-dashboard-card">
+      <div className="panel-heading">
+        <div>
+          <span className="eyebrow">AI COMPONENT SCANNER</span>
+          <h2>Identify boards from the laptop camera</h2>
+        </div>
+      </div>
+      <div className="scanner-dashboard-body">
+        <div className="scanner-dashboard-statuses">
+          <span className="status-chip">CAMERA: READY</span>
+          <span className="status-chip accent">AI MODEL: YOLO11n ONNX</span>
+        </div>
+        <button type="button" className="secondary-button scanner-open-button" onClick={() => onNavigate('camera-scanner')}>
+          OPEN CAMERA SCANNER
+        </button>
+      </div>
+      <p className="scanner-dashboard-note">Detected boards are separate from physical USB connection status.</p>
+    </section>
     <div className="dashboard-banners"><button type="button" className="code-banner" onClick={() => onNavigate('code-visualizer')}><span className="banner-symbol"><Code2 size={19} /></span><span><small>SOFTWARE → SILICON</small><strong>Follow digitalWrite() to its physical output.</strong></span><ArrowRight size={16} /></button><button type="button" className="learn-banner" onClick={() => onNavigate('learn-mode')}><BookOpen size={19} /><span><small>LEARN MODE</small><strong>Explore six AVR fundamentals</strong></span><ArrowRight size={15} /></button></div>
   </div>
 }

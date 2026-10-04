@@ -1,0 +1,21 @@
+node_modules/
+dist/
+.git/
+.vercel/
+.venv/
+**/.venv/
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*.cache
+ml/dataset/
+Microcontroller Detection/
+ml/train_yolo.py
+
+# Keep only the ONNX model consumed by the browser; omit all training runs.
+ml/models/*
+!ml/models/yolo11n_cpu_seed42_batch8-3/
+ml/models/yolo11n_cpu_seed42_batch8-3/*
+!ml/models/yolo11n_cpu_seed42_batch8-3/weights/
+ml/models/yolo11n_cpu_seed42_batch8-3/weights/*
+!ml/models/yolo11n_cpu_seed42_batch8-3/weights/best.onnx

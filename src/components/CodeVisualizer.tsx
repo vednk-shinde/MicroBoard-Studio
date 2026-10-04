@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { ArrowDown, Check, CircleHelp, Play, RotateCcw, Terminal } from 'lucide-react'
 import { getPinByArduinoNumber, type PinLevel, type PinMode } from '../data/pins'
+import { ArduinoExecutionPath } from './ArduinoExecutionPath'
 
 interface CodeVisualizerProps {
+  initialCode?: string
   onSimulationChange: (pinId: string, mode: PinMode, level: PinLevel) => void
   onSelectPin: (pinId: string) => void
   reducedMotion: boolean
@@ -10,8 +12,8 @@ interface CodeVisualizerProps {
 
 const starterCode = 'pinMode(13, OUTPUT);\ndigitalWrite(13, HIGH);'
 
-export function CodeVisualizer({ onSimulationChange, onSelectPin, reducedMotion }: CodeVisualizerProps) {
-  const [code, setCode] = useState(starterCode)
+export function CodeVisualizer({ initialCode, onSimulationChange, onSelectPin, reducedMotion }: CodeVisualizerProps) {
+  const [code, setCode] = useState(initialCode ?? starterCode)
   const [flow, setFlow] = useState<string[]>([])
   const [activeStep, setActiveStep] = useState(-1)
   const [message, setMessage] = useState('')
@@ -96,6 +98,7 @@ export function CodeVisualizer({ onSimulationChange, onSelectPin, reducedMotion 
         <div><span className="eyebrow">EXECUTION TRACE / CODE VISUALIZER</span><h1>Code → hardware</h1><p>Step through supported Arduino calls and see their simulated register effects.</p></div>
         <div className="simulation-tag large"><span /> SIMULATION</div>
       </div>
+      <ArduinoExecutionPath key={code} code={code} onSimulationChange={onSimulationChange} onSelectPin={onSelectPin} reducedMotion={reducedMotion} />
       <div className="code-layout">
         <section className="panel code-editor-panel">
           <div className="panel-heading code-panel-heading"><div><span className="eyebrow">SKETCH INPUT</span><h2><Terminal size={17} /> Arduino snippet</h2></div><button type="button" className="icon-button" title="Restore example code" aria-label="Restore example code" onClick={() => { setCode(starterCode); reset() }}><RotateCcw size={16} /></button></div>

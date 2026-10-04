@@ -1,11 +1,12 @@
 # MicroBoard Studio
 
-**The bridge between Arduino code, MCU internals and the real board.**
+The bridge between Arduino code, MCU internals and the real board.
+
 CuriousPARC 2026 · Theme 07 — Build Your Own Boards
 
 MicroBoard Studio is an interactive learning and configuration tool that shows what Arduino code actually does inside the microcontroller, and then lets you see the real board do it over USB.
 
-```
+```text
 pinMode(13, OUTPUT)      →  D13  →  PB5  →  DDRB bit 5 = 1   →  OUTPUT
 digitalWrite(13, HIGH)   →  D13  →  PB5  →  PORTB bit 5 = 1  →  LED ON
 ```
@@ -23,14 +24,17 @@ digitalWrite(13, HIGH)   →  D13  →  PB5  →  PORTB bit 5 = 1  →  LED ON
 
 ## Architecture
 
-```
-User ──► MicroBoard UI (React + TypeScript + Vite)
+```text
+User ──► MicroBoard UI
+(React + TypeScript + Vite)
              │  pin data · visualization
              ▼
-         Serial layer (Web Serial API, 115200 baud)
+
+       Serial layer (Web Serial API, 115200 baud)
              │  MODE / SET / READ / STATUS
              ▼
-         Firmware (firmware/microboard_firmware.ino) on Arduino Uno / ATmega328P
+         Firmware
+(firmware/microboard_firmware.ino) on Arduino Uno / ATmega328P
 ```
 
 ## Getting started
@@ -44,15 +48,15 @@ npm install
 npm run dev
 ```
 
-Open the printed URL in **Chrome or Edge** (Web Serial is not supported in Firefox/Safari).
+Open the printed URL in Chrome or Edge (Web Serial is not supported in Firefox/Safari).
 
 Other scripts: `npm run build`, `npm run preview`, `npm run lint`.
 
 ### Firmware
 
 1. Open `firmware/microboard_firmware.ino` in the Arduino IDE.
-2. Select **Arduino Uno** and the right COM port, then upload.
-3. In the web app, click **Connect** and pick the board's serial port. The board replies `READY`.
+2. Select Arduino Uno and the right COM port, then upload.
+3. In the web app, click Connect and pick the board's serial port. The board replies `READY`.
 
 ## Serial protocol
 
@@ -69,7 +73,7 @@ Errors come back as `ERROR <CMD> <REASON>`, e.g. `ERROR SET PIN_NOT_OUTPUT`, `ER
 
 ## Project structure
 
-```
+```text
 ├── firmware/                 Arduino firmware (serial command protocol)
 ├── src/
 │   ├── App.tsx               App shell, navigation, pages
@@ -78,14 +82,22 @@ Errors come back as `ERROR <CMD> <REASON>`, e.g. `ERROR SET PIN_NOT_OUTPUT`, `ER
 │   ├── data/pins.ts          Uno → ATmega328P pin/port/peripheral map
 │   └── services/serial.ts    Web Serial connection + protocol client
 ├── public/                   Static assets
-└── docs/                     Submission deck, project document and plan
+├── docs/                     Submission deck, project document and plan
+├── index.html                App entry point
+├── package.json              Project scripts and dependencies
+├── vite.config.ts            Vite configuration
+├── tsconfig*.json            TypeScript configuration
+├── .oxlintrc.json            Lint configuration
+├── .gitignore                Git ignore rules
+└── README.md                 Project overview and setup guide
 ```
 
 ## Status and roadmap
 
-**Working now:** pin and peripheral views, code-to-register visualization, register viewer, Web Serial link, and live digital I/O through the firmware.
+Working now: pin and peripheral views, code-to-register visualization, register viewer, Web Serial link, and live digital I/O through the firmware.
 
-**Next:**
+Next:
+
 1. Custom MicroBoard PCB with per-pin protection and sensing
 2. Conflict-aware pin/peripheral planner
 3. Signal and protocol visualization

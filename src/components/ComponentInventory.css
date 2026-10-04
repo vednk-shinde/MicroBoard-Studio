@@ -1,0 +1,432 @@
+.component-detections-panel,
+.build-inventory-panel {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 13px;
+}
+
+.component-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  align-items: start;
+  gap: 16px;
+}
+
+.component-workspace > .build-inventory-panel {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+}
+
+.component-workspace > .board-designer-panel {
+  grid-column: 1;
+}
+
+.component-detections-panel .panel-heading,
+.build-inventory-panel .panel-heading {
+  margin-bottom: 0;
+}
+
+.component-detections-panel .status-chip {
+  white-space: nowrap;
+}
+
+.detection-scope-note {
+  padding: 9px 11px;
+  border: 1px solid rgba(97, 217, 221, 0.15);
+  border-radius: 8px;
+  background: rgba(97, 217, 221, 0.045);
+  color: var(--muted);
+  font-size: 0.66rem;
+  line-height: 1.5;
+}
+
+.detected-component-list,
+.inventory-items {
+  display: grid;
+  gap: 8px;
+}
+
+.detected-component-row {
+  display: grid;
+  width: 100%;
+  grid-template-columns: 30px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid rgba(132, 154, 161, 0.14);
+  border-radius: 9px;
+  background: rgba(13, 19, 21, 0.58);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.detected-component-row:hover,
+.detected-component-row.is-selected {
+  border-color: rgba(97, 217, 221, 0.4);
+  background: rgba(97, 217, 221, 0.055);
+}
+
+.detected-component-icon {
+  display: grid;
+  width: 30px;
+  aspect-ratio: 1;
+  place-items: center;
+  border: 1px solid rgba(97, 217, 221, 0.2);
+  border-radius: 7px;
+  color: var(--cyan);
+}
+
+.detected-component-main {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.detected-component-main strong {
+  overflow-wrap: anywhere;
+  font-size: 0.73rem;
+}
+
+.detected-component-main small {
+  color: var(--muted);
+  font: 0.54rem var(--mono);
+}
+
+.detected-component-main .detected-box-meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--dim);
+  font-size: 0.5rem;
+}
+
+.detected-component-confidence {
+  color: var(--mint);
+  font: 0.68rem var(--mono);
+}
+
+.component-detections-empty,
+.inventory-empty {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 15px 10px;
+  color: var(--muted);
+  font-size: 0.68rem;
+  line-height: 1.5;
+}
+
+.component-detections-empty svg {
+  flex: 0 0 auto;
+  color: var(--dim);
+}
+
+.inventory-count,
+.component-source-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 8px;
+  border: 1px solid rgba(132, 154, 161, 0.16);
+  border-radius: 6px;
+  color: var(--muted);
+  font: 0.54rem var(--mono);
+  letter-spacing: 0.08em;
+}
+
+.inventory-mode-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.65rem;
+  line-height: 1.45;
+}
+
+.inventory-mode-note svg {
+  flex: 0 0 auto;
+  color: var(--mint);
+}
+
+.inventory-summary-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.inventory-summary-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 1px solid rgba(132, 154, 161, 0.13);
+  border-radius: 6px;
+  background: rgba(13, 19, 21, 0.55);
+  color: var(--muted);
+  font-size: 0.61rem;
+}
+
+.inventory-summary-item b {
+  color: var(--cyan);
+  font: 0.6rem var(--mono);
+}
+
+.inventory-summary-list .inventory-empty {
+  padding: 3px 0;
+}
+
+.inventory-add-row {
+  display: grid;
+  gap: 7px;
+  padding: 10px;
+  border: 1px solid rgba(132, 154, 161, 0.12);
+  border-radius: 8px;
+  background: rgba(13, 19, 21, 0.45);
+}
+
+.inventory-add-row > label {
+  color: var(--dim);
+  font: 0.53rem var(--mono);
+  letter-spacing: 0.1em;
+}
+
+.inventory-add-row > div {
+  display: flex;
+  gap: 7px;
+}
+
+.inventory-add-row select,
+.inventory-item-controls select {
+  min-width: 0;
+  padding: 8px 9px;
+  border: 1px solid rgba(132, 154, 161, 0.2);
+  border-radius: 7px;
+  background: #151c1e;
+  color: var(--text);
+  font-size: 0.66rem;
+}
+
+.inventory-add-row select {
+  flex: 1;
+}
+
+.inventory-add-row .secondary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 7px 9px;
+  font-size: 0.59rem;
+  white-space: nowrap;
+}
+
+.inventory-item {
+  min-width: 0;
+  padding: 9px;
+  border: 1px solid rgba(132, 154, 161, 0.13);
+  border-radius: 8px;
+  background: rgba(13, 19, 21, 0.53);
+}
+
+.inventory-item.is-selected {
+  border-color: rgba(97, 217, 221, 0.32);
+}
+
+.inventory-item-select {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 0 1px 8px;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.inventory-item-select > span {
+  display: grid;
+  gap: 3px;
+}
+
+.inventory-item-select strong {
+  font-size: 0.71rem;
+}
+
+.inventory-item-select small {
+  color: var(--muted);
+  font: 0.52rem var(--mono);
+}
+
+.inventory-confidence {
+  color: var(--mint);
+  font: 0.61rem var(--mono);
+}
+
+.inventory-item-controls {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.inventory-item-controls select {
+  flex: 1 1 130px;
+}
+
+.inventory-icon-button {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  place-items: center;
+  border: 1px solid rgba(132, 154, 161, 0.2);
+  border-radius: 6px;
+  background: rgba(21, 28, 30, 0.9);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.inventory-icon-button:hover {
+  border-color: var(--cyan);
+  color: var(--cyan);
+}
+
+.inventory-confirm-button {
+  display: inline-flex;
+  min-height: 30px;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 6px 8px;
+  border: 1px solid rgba(97, 217, 221, 0.32);
+  border-radius: 6px;
+  background: rgba(97, 217, 221, 0.08);
+  color: var(--cyan);
+  font: 0.53rem var(--mono);
+  cursor: pointer;
+}
+
+.inventory-confirm-button.is-confirmed {
+  border-color: rgba(141, 224, 192, 0.25);
+  background: rgba(141, 224, 192, 0.07);
+  color: var(--mint);
+}
+
+.inventory-confirm-button:disabled {
+  cursor: default;
+  opacity: 1;
+}
+
+.component-detail-panel {
+  display: grid;
+  gap: 10px;
+  padding: 13px;
+  border: 1px solid rgba(97, 217, 221, 0.18);
+  border-radius: 9px;
+  background: rgba(16, 23, 24, 0.7);
+}
+
+.component-detail-panel h3 {
+  margin-top: 3px;
+  font-size: 0.81rem;
+}
+
+.component-detail-panel > p {
+  color: var(--muted);
+  font-size: 0.66rem;
+  line-height: 1.5;
+}
+
+.component-source-tag.camera {
+  color: var(--cyan);
+}
+
+.component-source-tag.manual {
+  color: var(--amber);
+}
+
+.component-detail-list {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+}
+
+.component-detail-list > div {
+  display: grid;
+  grid-template-columns: minmax(65px, 0.35fr) minmax(0, 1fr);
+  gap: 8px;
+  font-size: 0.63rem;
+}
+
+.component-detail-list dt {
+  color: var(--dim);
+}
+
+.component-detail-list dd {
+  margin: 0;
+  color: var(--text);
+}
+
+.resistor-value-field {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 0.63rem;
+}
+
+.resistor-value-field input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid rgba(132, 154, 161, 0.2);
+  border-radius: 7px;
+  background: #111719;
+  color: var(--text);
+}
+
+.component-guidance {
+  display: grid;
+  gap: 5px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(132, 154, 161, 0.12);
+}
+
+.component-guidance strong {
+  color: var(--cyan);
+  font: 0.53rem var(--mono);
+  letter-spacing: 0.08em;
+}
+
+.component-guidance p {
+  color: var(--muted);
+  font-size: 0.62rem;
+  line-height: 1.45;
+}
+
+.component-guidance p.electrical-note {
+  color: var(--amber);
+}
+
+@media (max-width: 520px) {
+  .component-workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .component-workspace > .build-inventory-panel,
+  .component-workspace > .board-designer-panel {
+    grid-column: auto;
+    grid-row: auto;
+  }
+
+  .inventory-add-row > div {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .inventory-add-row .secondary-button {
+    min-height: 34px;
+  }
+}
