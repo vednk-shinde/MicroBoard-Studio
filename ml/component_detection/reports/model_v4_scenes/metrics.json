@@ -1,0 +1,170 @@
+{
+  "test": {
+    "precision": 0.632,
+    "recall": 0.523,
+    "mAP50": 0.529,
+    "mAP50-95": 0.392
+  },
+  "per_class": {
+    "Battery_Holder": {
+      "precision": 0.691,
+      "recall": 0.312,
+      "mAP50": 0.392,
+      "mAP50-95": 0.173
+    },
+    "Breadboard": {
+      "precision": 0.493,
+      "recall": 0.75,
+      "mAP50": 0.471,
+      "mAP50-95": 0.265
+    },
+    "Capacitor": {
+      "precision": 0.481,
+      "recall": 0.333,
+      "mAP50": 0.309,
+      "mAP50-95": 0.192
+    },
+    "Connector": {
+      "precision": 0.556,
+      "recall": 0.8,
+      "mAP50": 0.689,
+      "mAP50-95": 0.664
+    },
+    "Crystal_Oscillator": {
+      "precision": 0.491,
+      "recall": 0.222,
+      "mAP50": 0.156,
+      "mAP50-95": 0.078
+    },
+    "Diode": {
+      "precision": 1.0,
+      "recall": 0.512,
+      "mAP50": 0.728,
+      "mAP50-95": 0.416
+    },
+    "Heat_Sink": {
+      "precision": 0.865,
+      "recall": 0.8,
+      "mAP50": 0.795,
+      "mAP50-95": 0.749
+    },
+    "Inductor": {
+      "precision": 0.166,
+      "recall": 0.25,
+      "mAP50": 0.273,
+      "mAP50-95": 0.236
+    },
+    "Jumper_Wires": {
+      "precision": 0.843,
+      "recall": 0.778,
+      "mAP50": 0.759,
+      "mAP50-95": 0.591
+    },
+    "Microcontroller_Board": {
+      "precision": 0.854,
+      "recall": 0.925,
+      "mAP50": 0.961,
+      "mAP50-95": 0.801
+    },
+    "Potentiometer": {
+      "precision": 0.656,
+      "recall": 0.5,
+      "mAP50": 0.592,
+      "mAP50-95": 0.372
+    },
+    "Power_Supply_Module": {
+      "precision": 0.459,
+      "recall": 0.333,
+      "mAP50": 0.429,
+      "mAP50-95": 0.42
+    },
+    "Resistor": {
+      "precision": 0.661,
+      "recall": 0.281,
+      "mAP50": 0.324,
+      "mAP50-95": 0.142
+    }
+  },
+  "thresholds": {
+    "Battery_Holder": 0.9,
+    "Breadboard": 0.7,
+    "Capacitor": 0.9,
+    "Connector": 0.85,
+    "Crystal_Oscillator": 0.5,
+    "Diode": 0.6,
+    "Heat_Sink": 0.5,
+    "Inductor": 0.65,
+    "Jumper_Wires": 0.9,
+    "Microcontroller_Board": 0.5,
+    "Potentiometer": 0.9,
+    "Power_Supply_Module": 0.85,
+    "Resistor": 0.9
+  },
+  "unreliable_classes": [
+    "Battery_Holder",
+    "Capacitor",
+    "Potentiometer",
+    "Resistor"
+  ],
+  "test_images": 161,
+  "test_images_fully_correct": 103,
+  "background_images": 47,
+  "background_images_with_false_detection": 1,
+  "false_positives": {
+    "Microcontroller_Board": 2,
+    "Breadboard": 5,
+    "Crystal_Oscillator": 2,
+    "Diode": 1,
+    "Heat_Sink": 1,
+    "Inductor": 3
+  },
+  "false_negatives": {
+    "Battery_Holder": 16,
+    "Breadboard": 2,
+    "Capacitor": 6,
+    "Connector": 2,
+    "Crystal_Oscillator": 7,
+    "Diode": 2,
+    "Heat_Sink": 2,
+    "Inductor": 3,
+    "Jumper_Wires": 8,
+    "Microcontroller_Board": 3,
+    "Potentiometer": 5,
+    "Power_Supply_Module": 1,
+    "Resistor": 7
+  },
+  "confused_pairs": {
+    "Power_Supply_Module -> Microcontroller_Board": 3
+  },
+  "calibration": {
+    "0.5-0.6": {
+      "predictions": 1,
+      "actually_correct": 1.0
+    },
+    "0.6-0.7": {
+      "predictions": 3,
+      "actually_correct": 0.0
+    },
+    "0.7-0.8": {
+      "predictions": 7,
+      "actually_correct": 0.857
+    },
+    "0.8-0.9": {
+      "predictions": 34,
+      "actually_correct": 0.853
+    },
+    "0.9-1.0": {
+      "predictions": 36,
+      "actually_correct": 0.778
+    }
+  },
+  "speed_ms_per_image_gpu": {
+    "preprocess": 1.05,
+    "inference": 5.84,
+    "loss": 0.0,
+    "postprocess": 0.93
+  },
+  "model_size": {
+    "best.pt_MB": 5.47
+  }
+}
