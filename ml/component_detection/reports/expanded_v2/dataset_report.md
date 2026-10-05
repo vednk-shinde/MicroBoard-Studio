@@ -13,8 +13,8 @@
 - Collection target in the manifest: 27290 images
 
 ## Blocking problems
-- train: image directory does not exist: C:\Users\vedan\AppData\Local\Temp\mbds\MicroBoard_YOLO_Dataset\images\train
-- val: image directory does not exist: C:\Users\vedan\AppData\Local\Temp\mbds\MicroBoard_YOLO_Dataset\images\val
+- train: image directory does not exist: images\train
+- val: image directory does not exist: images\val
 - The dataset contains no images, so there is nothing to train on
 
 ## Warnings

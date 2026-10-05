@@ -131,9 +131,17 @@ def file_hash(path: Path) -> str:
 
 def validate(dataset: Path, min_instances: int) -> tuple[Report, dict]:
     report = Report()
+
+    def rel(path: Path) -> str:
+        """Paths in the report are relative to the dataset folder."""
+        try:
+            return str(Path(path).relative_to(dataset))
+        except ValueError:
+            return str(path)
+
     data_yaml = dataset / "data.yaml"
     if not data_yaml.is_file():
-        report.blocking.append(f"Missing {data_yaml}")
+        report.blocking.append("Missing data.yaml")
         return report, {}
 
     names, config = load_names(data_yaml)
@@ -223,7 +231,7 @@ def validate(dataset: Path, min_instances: int) -> tuple[Report, dict]:
             parts[len(parts) - 1 - parts[::-1].index("images")] = "labels"
         label_dir = Path(*parts)
         if not image_dir.is_dir():
-            report.blocking.append(f"{split}: image directory does not exist: {image_dir}")
+            report.blocking.append(f"{split}: image directory does not exist: {rel(image_dir)}")
             split_counts[split] = {"images": 0, "boxes": 0, "background": 0}
             continue
         images = sorted(path for path in image_dir.rglob("*") if path.suffix.lower() in IMAGE_EXTENSIONS)
@@ -232,10 +240,10 @@ def validate(dataset: Path, min_instances: int) -> tuple[Report, dict]:
         counts = {"images": len(images), "boxes": 0, "background": 0}
         total_images += len(images)
         if not images:
-            report.blocking.append(f"{split}: no images in {image_dir}")
+            report.blocking.append(f"{split}: no images in {rel(image_dir)}")
 
         for key in sorted(labels.keys() - image_keys.keys(), key=str):
-            report.invalid_samples.append({"split": split, "file": str(labels[key]), "problem": "label file has no matching image"})
+            report.invalid_samples.append({"split": split, "file": rel(labels[key]), "problem": "label file has no matching image"})
         for key, image_path in image_keys.items():
             problem = None
             try:
@@ -247,13 +255,13 @@ def validate(dataset: Path, min_instances: int) -> tuple[Report, dict]:
                 problem = f"corrupted or unreadable image ({error.__class__.__name__})"
                 width = height = 0
             if problem:
-                report.invalid_samples.append({"split": split, "file": str(image_path), "problem": problem})
+                report.invalid_samples.append({"split": split, "file": rel(image_path), "problem": problem})
                 continue
             hashes[file_hash(image_path)].append(f"{split}/{image_path.name}")
 
             label_path = labels.get(key)
             if label_path is None:
-                report.invalid_samples.append({"split": split, "file": str(image_path), "problem": "missing label file (treated as background by Ultralytics; add an empty .txt if intended)"})
+                report.invalid_samples.append({"split": split, "file": rel(image_path), "problem": "missing label file (treated as background by Ultralytics; add an empty .txt if intended)"})
                 continue
             lines = [line for line in label_path.read_text(encoding="utf-8").splitlines() if line.strip() and not line.lstrip().startswith("#")]
             if not lines:
@@ -263,7 +271,7 @@ def validate(dataset: Path, min_instances: int) -> tuple[Report, dict]:
             objects = 0
             for number, line in enumerate(lines, start=1):
                 fields = line.split()
-                where = f"{label_path}:{number}"
+                where = f"{rel(label_path)}:{number}"
                 if len(fields) != 5:
                     report.invalid_samples.append({"split": split, "file": where, "problem": f"expected 5 values, found {len(fields)} (segmentation/OBB labels are not plain boxes)"})
                     continue
@@ -331,7 +339,7 @@ def validate(dataset: Path, min_instances: int) -> tuple[Report, dict]:
 def write_report(dataset: Path, report: Report, stats: dict, report_dir: Path, min_instances: int) -> Path:
     report_dir.mkdir(parents=True, exist_ok=True)
     (report_dir / "dataset_report.json").write_text(
-        json.dumps({"dataset": str(dataset), "ready": not report.blocking, "blocking": report.blocking,
+        json.dumps({"dataset": dataset.name, "ready": not report.blocking, "blocking": report.blocking,
                     "warnings": report.warnings, "invalid_samples": report.invalid_samples, "stats": stats}, indent=2),
         encoding="utf-8",
     )
