@@ -1,8 +1,10 @@
 import { useMemo, useRef, useState } from 'react'
-import { AlertTriangle, CircleHelp, CircleX, Hammer, RotateCcw, Terminal } from 'lucide-react'
+import { AlertTriangle, ArrowRight, BookOpen, CircleHelp, CircleX, Hammer, RotateCcw, Terminal } from 'lucide-react'
 import { type PinLevel, type PinMode } from '../data/pins'
 import { compileAndRun, SIMULATOR_LIMITS, type CompileResult, type Diagnostic } from '../sim/arduinoSim'
 import { ArduinoExecutionPath } from './ArduinoExecutionPath'
+import { COMPONENT_LESSONS } from '../data/componentLessons'
+import { detectFromSketch, type ProjectComponent } from '../sim/componentDetection'
 import './CodeVisualizer.css'
 
 interface CodeVisualizerProps {
@@ -10,6 +12,8 @@ interface CodeVisualizerProps {
   onSimulationChange: (pinId: string, mode: PinMode, level: PinLevel) => void
   onSelectPin: (pinId: string) => void
   reducedMotion: boolean
+  onComponentsDetected?: (parts: ProjectComponent[]) => void
+  onOpenLearnMode?: () => void
 }
 
 const examples = [
@@ -112,6 +116,49 @@ void loop() {
 }`,
   },
   {
+    id: 'radar',
+    label: 'Radar · servo + ultrasonic',
+    code: `// Arduino radar: a servo sweeps an HC-SR04 and a buzzer warns about close objects
+#include <Servo.h>
+
+const int trigPin = 10;
+const int echoPin = 11;
+const int buzzerPin = 8;
+Servo radarServo;
+
+int measureDistance() {
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+  long duration = pulseIn(echoPin, HIGH, 30000);
+  return duration / 58;
+}
+
+void setup() {
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
+  pinMode(buzzerPin, OUTPUT);
+  radarServo.attach(12);
+  Serial.begin(9600);
+}
+
+void loop() {
+  for (int angle = 15; angle <= 165; angle += 15) {
+    radarServo.write(angle);
+    delay(30);
+    int distance = measureDistance();
+    if (distance > 0 && distance < 25) tone(buzzerPin, 1000);
+    else noTone(buzzerPin);
+    Serial.print(angle);
+    Serial.print(" deg: ");
+    Serial.print(distance);
+    Serial.println(" cm");
+  }
+}`,
+  },
+  {
     id: 'registers',
     label: 'Blink · direct registers',
     code: `// The same blink, writing the AVR registers directly
@@ -128,18 +175,37 @@ void loop() {
   },
 ]
 
+const DRAFT_STORAGE_KEY = 'microboard.sketch.v1'
+
+function loadDraft(): string | null {
+  try {
+    return localStorage.getItem(DRAFT_STORAGE_KEY)
+  } catch {
+    return null
+  }
+}
+
+function saveDraft(code: string) {
+  try {
+    localStorage.setItem(DRAFT_STORAGE_KEY, code)
+  } catch {
+    // Storage unavailable: the sketch then only lasts while this page is open.
+  }
+}
+
 function offsetOfLine(code: string, line: number): [number, number] {
   const lines = code.split('\n')
   const start = lines.slice(0, line - 1).reduce((sum, text) => sum + text.length + 1, 0)
   return [start, start + (lines[line - 1]?.length ?? 0)]
 }
 
-export function CodeVisualizer({ initialCode, onSimulationChange, onSelectPin, reducedMotion }: CodeVisualizerProps) {
-  const startCode = initialCode ?? examples[0].code
-  const [code, setCode] = useState(startCode)
+export function CodeVisualizer({ initialCode, onSimulationChange, onSelectPin, reducedMotion, onComponentsDetected, onOpenLearnMode }: CodeVisualizerProps) {
+  const [startCode] = useState(() => initialCode ?? loadDraft() ?? examples[0].code)
+  const [code, setCodeState] = useState(startCode)
   const [compiledCode, setCompiledCode] = useState(startCode)
   const [result, setResult] = useState<CompileResult>(() => compileAndRun(startCode))
   const [runKey, setRunKey] = useState(0)
+  const [detected, setDetected] = useState<ProjectComponent[]>([])
   const textareaRef = useRef<HTMLTextAreaElement | null>(null)
   const gutterRef = useRef<HTMLPreElement | null>(null)
   const traceRef = useRef<HTMLDivElement | null>(null)
@@ -149,11 +215,20 @@ export function CodeVisualizer({ initialCode, onSimulationChange, onSelectPin, r
   const errorLines = useMemo(() => new Set(result.ok ? (result.runtimeError ? [result.runtimeError.line] : []) : result.errors.map((error) => error.line)), [result])
   const lineCount = code.split('\n').length
 
+  // Keep the sketch being edited, so switching pages (e.g. to Learn Mode) doesn't lose it.
+  function setCode(next: string) {
+    setCodeState(next)
+    saveDraft(next)
+  }
+
   function compile() {
     const next = compileAndRun(code)
     setResult(next)
     setCompiledCode(code)
     setRunKey((key) => key + 1)
+    const parts = detectFromSketch(code, next.ok ? next : null)
+    setDetected(parts)
+    onComponentsDetected?.(parts)
     // On success, bring the animated execution path into view; on errors, stay with the messages in the editor.
     if (next.ok) requestAnimationFrame(() => traceRef.current?.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'start' }))
   }
@@ -257,6 +332,13 @@ export function CodeVisualizer({ initialCode, onSimulationChange, onSelectPin, r
             </div>
           )}
           {run && <p className="build-note">{run.runtimeError ? `Line ${run.runtimeError.line}: ${run.runtimeError.message}` : run.stopReason} The simulator runs loop() up to {SIMULATOR_LIMITS.loopIterations} times and records at most {SIMULATOR_LIMITS.events} operations.</p>}
+          {runKey > 0 && detected.length > 0 && (
+            <div className="detected-parts">
+              <div className="serial-monitor-heading"><span>COMPONENTS IN THIS SKETCH</span><small>{detected.length} found</small></div>
+              <div className="detected-parts-list">{detected.map((part) => <span key={part.id} title={part.inferred}>{COMPONENT_LESSONS[part.id].name}{part.pins.length ? ` · ${[...new Set(part.pins.map((pin) => pin.pin))].join(', ')}` : ''}</span>)}</div>
+              {onOpenLearnMode && <button type="button" className="secondary-button" onClick={onOpenLearnMode}><BookOpen size={14} /> Learn how they work <ArrowRight size={14} /></button>}
+            </div>
+          )}
           <div className="serial-monitor">
             <div className="serial-monitor-heading"><span>SERIAL MONITOR</span><small>{run?.serial ? `${run.serial.length} bytes` : 'no output'}</small></div>
             <pre>{run?.serial || (run ? 'Nothing printed. Use Serial.begin() and Serial.println() to send text.' : 'Compile the sketch to see its serial output.')}</pre>

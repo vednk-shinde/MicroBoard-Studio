@@ -23,6 +23,7 @@ const EMPTY_SNAPSHOT: Snapshot = {
   regs: { DDRB: 0, PORTB: 0, PINB: 0, DDRC: 0, PORTC: 0, PINC: 0, DDRD: 0, PORTD: 0, PIND: 0 },
   pwm: {},
   tones: {},
+  servos: {},
   timeMs: 0,
 }
 
@@ -35,7 +36,7 @@ function hex(value: number): string {
 }
 
 function isDriving(snapshot: Snapshot, pin: PinDefinition): boolean {
-  if (snapshot.pwm[pin.id] || snapshot.tones[pin.id]) return true
+  if (snapshot.pwm[pin.id] || snapshot.tones[pin.id] || snapshot.servos[pin.id] !== undefined) return true
   return bitOf(snapshot, `DDR${pin.port}`, pin.bit) === 1 && bitOf(snapshot, `PORT${pin.port}`, pin.bit) === 1
 }
 
@@ -203,8 +204,10 @@ function ArduinoPcb({ focusPin, pinActive, snapshot, serialActive }: { focusPin:
 function circuitState(pin: PinDefinition, snapshot: Snapshot): { mode: string; on: boolean; status: string } {
   const duty = snapshot.pwm[pin.id]
   const tone = snapshot.tones[pin.id]
+  const servo = snapshot.servos[pin.id]
   const output = bitOf(snapshot, `DDR${pin.port}`, pin.bit) === 1
   const high = bitOf(snapshot, `PORT${pin.port}`, pin.bit) === 1
+  if (servo !== undefined) return { mode: 'SERVO', on: true, status: `SERVO PULSES · ${servo}°` }
   if (tone) return { mode: 'TONE', on: true, status: `${tone} HZ SQUARE WAVE` }
   if (duty) return { mode: 'PWM', on: true, status: `PWM ${Math.round((duty / 255) * 100)}% · LED DIMMED` }
   if (output) return { mode: 'OUTPUT', on: high, status: high ? 'LED CURRENT FLOWING' : 'PIN LOW · NO CURRENT' }
@@ -274,7 +277,7 @@ function RegisterView({ pin, snapshot, step }: { pin: PinDefinition; snapshot: S
     <section className="panel execution-register-panel">
       <div className="panel-heading">
         <div><span className="eyebrow">LOW-LEVEL VIEW</span><h2>ATmega328P Registers</h2></div>
-        <span className="execution-register-value">{pin.mcuPin} = {state.mode === 'PWM' || state.mode === 'TONE' ? state.mode : bitOf(snapshot, `PIN${port}`, pin.bit) ? 'HIGH' : 'LOW'}</span>
+        <span className="execution-register-value">{pin.mcuPin} = {state.mode === 'PWM' || state.mode === 'TONE' || state.mode === 'SERVO' ? state.mode : bitOf(snapshot, `PIN${port}`, pin.bit) ? 'HIGH' : 'LOW'}</span>
       </div>
       <div className="register-rows">
         <div className={`execution-register-row ${step?.kind === 'MCU' ? 'is-active' : ''}`}><strong>{pin.mcuPin}</strong><span>Arduino {pin.id} · port {port}, bit {pin.bit}</span></div>

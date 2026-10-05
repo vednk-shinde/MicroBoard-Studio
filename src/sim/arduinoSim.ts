@@ -13,10 +13,11 @@ export type Snapshot = {
   regs: Record<string, number>
   pwm: Record<string, number>
   tones: Record<string, number>
+  servos: Record<string, number>
   timeMs: number
 }
 
-export type SimEventKind = 'pinMode' | 'digitalWrite' | 'digitalRead' | 'analogWrite' | 'analogRead' | 'register' | 'delay' | 'serial' | 'tone'
+export type SimEventKind = 'pinMode' | 'digitalWrite' | 'digitalRead' | 'analogWrite' | 'analogRead' | 'register' | 'delay' | 'serial' | 'tone' | 'servo' | 'pulse' | 'i2c'
 
 export type SimEvent = {
   index: number
@@ -49,7 +50,7 @@ export type SimulationRun = {
 export type CompileResult = { ok: false; errors: Diagnostic[]; warnings: Diagnostic[] } | SimulationRun
 
 const MAX_LOOP_ITERATIONS = 3
-const MAX_EVENTS = 150
+const MAX_EVENTS = 400
 const MAX_OPS = 200_000
 const MAX_TIME_MS = 120_000
 const MAX_CALL_DEPTH = 120
@@ -90,12 +91,33 @@ const BUILTIN_FUNCTIONS: Record<string, [number, number]> = {
   delay: [1, 1], delayMicroseconds: [1, 1], millis: [0, 0], micros: [0, 0], tone: [2, 3], noTone: [1, 1],
   map: [5, 5], constrain: [3, 3], min: [2, 2], max: [2, 2], abs: [1, 1], sqrt: [1, 1], sq: [1, 1], pow: [2, 2],
   sin: [1, 1], cos: [1, 1], tan: [1, 1], floor: [1, 1], ceil: [1, 1], round: [1, 1], random: [1, 2], randomSeed: [1, 1],
+  pulseIn: [2, 3], pulseInLong: [2, 3],
   bitRead: [2, 2], bitSet: [2, 2], bitClear: [2, 2], bitWrite: [3, 3], bit: [1, 1], _BV: [1, 1], highByte: [1, 1], lowByte: [1, 1], F: [1, 1],
 }
 
 const SERIAL_METHODS: Record<string, [number, number]> = {
   begin: [1, 2], end: [0, 0], print: [1, 2], println: [0, 2], write: [1, 1], available: [0, 0], read: [0, 0], peek: [0, 0], flush: [0, 0],
 }
+
+const WIRE_METHODS: Record<string, [number, number]> = {
+  begin: [0, 1], end: [0, 0], setClock: [1, 1], beginTransmission: [1, 1], write: [1, 2], endTransmission: [0, 1], requestFrom: [2, 3], read: [0, 0], available: [0, 0],
+}
+
+const SERVO_METHODS: Record<string, [number, number]> = {
+  attach: [1, 3], detach: [0, 0], write: [1, 1], writeMicroseconds: [1, 1], read: [0, 0], readMicroseconds: [0, 0], attached: [0, 0],
+}
+
+// Libraries the simulator models. Objects from any other library still compile, but their calls are skipped.
+const SIMULATED_LIBRARIES = new Set(['Arduino.h', 'Servo.h', 'Wire.h'])
+
+const I2C_DEVICES: Record<number, string> = {
+  0x68: 'MPU6050', 0x69: 'MPU6050 (AD0 high)', 0x27: 'LCD backpack (PCF8574)', 0x3f: 'LCD backpack (PCF8574A)',
+  0x3c: 'SSD1306 OLED', 0x3d: 'SSD1306 OLED', 0x76: 'BMP280 / BME280', 0x77: 'BMP280 / BME280', 0x48: 'ADS1115 / TMP102', 0x57: 'EEPROM',
+}
+
+// Raw MPU6050 readings returned from registers 0x3B–0x48 once the chip is awake:
+// accel X/Y/Z ≈ 0.02 g, -0.01 g, 1.00 g · temperature ≈ 25 °C · gyro ≈ 0 °/s.
+const MPU6050_DATA = [0x01, 0x48, 0xff, 0x38, 0x40, 0x00, 0xf0, 0xb0, 0x00, 0x10, 0xff, 0xf0, 0x00, 0x05]
 
 const TYPE_WORDS = new Set(['void', 'int', 'long', 'short', 'char', 'byte', 'bool', 'boolean', 'float', 'double', 'unsigned', 'signed', 'word', 'String', 'size_t', 'uint8_t', 'int8_t', 'uint16_t', 'int16_t', 'uint32_t', 'int32_t', 'uint64_t', 'int64_t', 'auto'])
 const QUALIFIERS = new Set(['const', 'static', 'volatile', 'constexpr', 'inline', 'register'])
@@ -238,7 +260,7 @@ function tokenize(src: string, warnings: Diagnostic[]): Token[] {
   const raw = lex(src, 1, (directive, line) => {
     const include = directive.match(/^include\s*[<"]([^>"]+)[>"]/)
     if (include) {
-      if (include[1] !== 'Arduino.h') warnings.push({ line, message: `#include <${include[1]}>: libraries aren't simulated, only core Arduino functions are available.` })
+      if (!SIMULATED_LIBRARIES.has(include[1])) warnings.push({ line, message: `#include <${include[1]}>: this library isn't simulated, so calls on its objects are skipped.` })
       return
     }
     const define = directive.match(/^define\s+([A-Za-z_]\w*)(\()?\s*(.*)$/)
@@ -271,17 +293,17 @@ type Expr =
   | { k: 'bin'; line: number; op: string; l: Expr; r: Expr }
   | { k: 'assign'; line: number; op: string; target: Expr; value: Expr }
   | { k: 'cond'; line: number; test: Expr; cons: Expr; alt: Expr }
-  | { k: 'call'; line: number; name: string; obj: string | null; args: Expr[] }
+  | { k: 'call'; line: number; name: string; obj: string | null; index?: Expr; args: Expr[] }
   | { k: 'index'; line: number; target: Expr; index: Expr }
   | { k: 'cast'; line: number; type: string; arg: Expr }
   | { k: 'list'; line: number; items: Expr[] }
   | { k: 'seq'; line: number; items: Expr[] }
   | { k: 'sizeof'; line: number; arg: Expr | null; type: string | null }
 
-type Declarator = { name: string; line: number; isArray: boolean; size: Expr | null; init: Expr | null }
+type Declarator = { name: string; line: number; isArray: boolean; size: Expr | null; init: Expr | null; ctorArgs?: Expr[] }
 
 type Stmt =
-  | { k: 'var'; line: number; type: string; isConst: boolean; decls: Declarator[] }
+  | { k: 'var'; line: number; type: string; isConst: boolean; decls: Declarator[]; isObject?: boolean }
   | { k: 'expr'; line: number; e: Expr }
   | { k: 'if'; line: number; test: Expr; cons: Stmt; alt: Stmt | null }
   | { k: 'while'; line: number; test: Expr; body: Stmt }
@@ -375,7 +397,7 @@ class Parser {
       const token = this.peek()
       this.checkKeyword(token)
       if (!this.isTypeStart()) {
-        if (token.t === 'id' && this.peek(1).t === 'id') throw new CompileError(token.line, `'${token.v}' does not name a type (libraries and classes aren't simulated)`)
+        if (token.t === 'id' && this.peek(1).t === 'id') { globals.push(this.parseObjectDecl()); continue }
         throw new CompileError(token.line, token.t === 'id' && this.isOp('(', 1)
           ? `'${token.v}(...)' must be inside a function; put it in setup() or loop()`
           : `expected a declaration before ${this.describe(token)}`)
@@ -438,6 +460,23 @@ class Parser {
     }
     this.expectOp(';')
     return { k: 'var', line: first.line, type, isConst, decls }
+  }
+
+  // `Servo myServo;`, `Servo servos[2];`, `LiquidCrystal_I2C lcd(0x27, 16, 2);`: an object of a library class.
+  private parseObjectDecl(): Stmt {
+    const typeToken = this.next()
+    const decls: Declarator[] = []
+    do {
+      const name = this.expectId('an object name')
+      let isArray = false
+      let size: Expr | null = null
+      if (this.eatOp('[')) { isArray = true; size = this.parseExpr(); this.expectOp(']') }
+      const ctorArgs = this.isOp('(') ? this.parseArgs() : []
+      if (this.isOp('=')) throw new CompileError(name.line, `initialising library object '${name.v}' with '=' isn't supported by the simulator`)
+      decls.push({ name: name.v, line: name.line, isArray, size, init: null, ctorArgs })
+    } while (this.eatOp(','))
+    this.expectOp(';')
+    return { k: 'var', line: typeToken.line, type: typeToken.v, isConst: false, decls, isObject: true }
   }
 
   private parseInitList(): Expr {
@@ -532,6 +571,7 @@ class Parser {
         const { type, isConst } = this.parseType()
         return this.parseDeclarators(type, isConst, this.expectId('a variable name'))
       }
+      if (this.peek(1).t === 'id') return this.parseObjectDecl()
     }
     const e = this.parseExpr(true)
     this.expectOp(';')
@@ -641,6 +681,10 @@ class Parser {
         if (expr.k !== 'id' && expr.k !== 'index') throw new CompileError(token.line, `lvalue required as operand of '${token.v}'`)
         this.pos++
         expr = { k: 'update', line: token.line, op: token.v, prefix: false, target: expr }
+      } else if (token.v === '.' && expr.k === 'index' && expr.target.k === 'id' && this.peek(1).t === 'id' && this.isOp('(', 2)) {
+        this.pos++
+        const member = this.next()
+        expr = { k: 'call', line: token.line, name: member.v, obj: expr.target.name, index: expr.index, args: this.parseArgs() }
       } else if (token.v === '.' || token.v === '->' || token.v === '::') {
         throw new CompileError(token.line, `'${expr.k === 'id' ? expr.name : 'expression'}' has no member access in the simulator (only Serial.* is supported)`)
       } else break
@@ -708,7 +752,8 @@ class Parser {
 
 // ---------------------------------------------------------------- semantic check
 
-type ScopeInfo = Map<string, { isConst: boolean; isArray: boolean }>
+type VarInfo = { isConst: boolean; isArray: boolean; objType?: string }
+type ScopeInfo = Map<string, VarInfo>
 
 function checkProgram(program: Program): Diagnostic[] {
   const errors: Diagnostic[] = []
@@ -719,7 +764,7 @@ function checkProgram(program: Program): Diagnostic[] {
   }
   const scopes: ScopeInfo[] = [new Map()]
   const lookup = (name: string) => { for (let i = scopes.length - 1; i >= 0; i--) { const found = scopes[i].get(name); if (found) return found } return null }
-  const declare = (name: string, line: number, info: { isConst: boolean; isArray: boolean }) => {
+  const declare = (name: string, line: number, info: VarInfo) => {
     const scope = scopes[scopes.length - 1]
     if (scope.has(name)) report(line, `redeclaration of '${name}'`)
     scope.set(name, info)
@@ -731,6 +776,7 @@ function checkProgram(program: Program): Diagnostic[] {
     if (base.k !== 'id') return
     const info = lookup(base.name)
     if (!info && (base.name in BUILTIN_CONSTANTS || base.name in FLOAT_CONSTANTS)) report(line, `assignment of read-only value '${base.name}'`)
+    else if (info?.objType) report(line, `can't assign to library object '${base.name}'`)
     else if (info?.isConst) report(line, `assignment of read-only variable '${base.name}'`)
     else if (info?.isArray && target.k === 'id') report(line, `invalid array assignment to '${base.name}'`)
   }
@@ -754,9 +800,18 @@ function checkProgram(program: Program): Diagnostic[] {
         e.args.forEach(expr)
         let arity: [number, number] | null = null
         if (e.obj) {
-          if (e.obj !== 'Serial') { report(e.line, `'${e.obj}' isn't supported by the simulator (only Serial.* is)`); return }
-          arity = SERIAL_METHODS[e.name] ?? null
-          if (!arity) { report(e.line, `'Serial.${e.name}()' isn't supported by the simulator`); return }
+          expr(e.index ?? null)
+          if (e.obj === 'Serial' || e.obj === 'Wire') {
+            arity = (e.obj === 'Serial' ? SERIAL_METHODS : WIRE_METHODS)[e.name] ?? null
+            if (!arity) { report(e.line, `'${e.obj}.${e.name}()' isn't supported by the simulator`); return }
+          } else {
+            const info = lookup(e.obj)
+            if (!info) { report(e.line, `'${e.obj}' was not declared in this scope`); return }
+            if (!info.objType) { report(e.line, `request for member '${e.name}' in '${e.obj}', which is not an object`); return }
+            if (info.objType !== 'Servo') return
+            arity = SERVO_METHODS[e.name] ?? null
+            if (!arity) { report(e.line, `'class Servo' has no member named '${e.name}'`); return }
+          }
         } else if (program.fns.has(e.name)) {
           const count = program.fns.get(e.name)!.params.length
           arity = [count, count]
@@ -781,7 +836,8 @@ function checkProgram(program: Program): Diagnostic[] {
     for (const decl of s.decls) {
       expr(decl.size)
       expr(decl.init)
-      declare(decl.name, decl.line, { isConst: s.isConst, isArray: decl.isArray })
+      // Constructor arguments of library objects often use the library's own constants, so they aren't checked.
+      declare(decl.name, decl.line, { isConst: s.isConst, isArray: decl.isArray, objType: s.isObject ? s.type : undefined })
     }
   }
 
@@ -870,6 +926,12 @@ function pinNumberLabel(pin: PinDefinition): string {
   return pin.family === 'Digital' ? pin.id.slice(1) : pin.id
 }
 
+type LibraryObject = { cls: string; name: string; pin: PinDefinition | null; us: number; min: number; max: number; attached: boolean }
+
+function servoAngle(servo: LibraryObject): number {
+  return Math.round(((servo.us - servo.min) * 180) / (servo.max - servo.min))
+}
+
 // ---------------------------------------------------------------- machine
 
 class Machine {
@@ -892,6 +954,8 @@ class Machine {
   private globals = new Map<string, Slot>()
   private scopes: Map<string, Slot>[] = []
   private warned = new Set<string>()
+  private objects: LibraryObject[] = []
+  private i2c = { begun: false, address: 0, tx: [] as number[], rx: [] as number[], pointer: {} as Record<number, number>, devices: {} as Record<number, number[]> }
 
   constructor(program: Program, source: string) {
     this.program = program
@@ -954,6 +1018,7 @@ class Machine {
       regs: { ...this.regs, PINB: this.pinRegister('B'), PINC: this.pinRegister('C'), PIND: this.pinRegister('D') },
       pwm: { ...this.pwm },
       tones: { ...this.tones },
+      servos: Object.fromEntries(this.objects.filter((object) => object.cls === 'Servo' && object.attached && object.pin).map((object) => [object.pin!.id, servoAngle(object)])),
       timeMs: this.timeMs,
     }
   }
@@ -982,6 +1047,8 @@ class Machine {
     const { output, portBit } = this.pinState(pin)
     const duty = this.pwm[pin.id]
     const tone = this.tones[pin.id]
+    const servo = this.objects.find((object) => object.cls === 'Servo' && object.attached && object.pin?.id === pin.id)
+    if (servo) return { kind: 'PHYSICAL', title: `Servo horn → ${servoAngle(servo)}°`, description: `The servo's control board compares the ${servo.us} µs pulse with its internal potentiometer and turns the horn to ${servoAngle(servo)}°.` }
     if (tone) return { kind: 'PHYSICAL', title: `${pin.id} → ${tone} Hz tone`, description: `A buzzer on ${pin.id} would sound at ${tone} Hz.` }
     if (duty !== undefined) {
       const percent = Math.round((duty / 255) * 100)
@@ -1299,8 +1366,21 @@ class Machine {
     (this.scopes[this.scopes.length - 1] ?? this.globals).set(name, slot)
   }
 
+  private declareObject(cls: string, decl: Declarator) {
+    if (cls !== 'Servo') this.warn(`'${cls}' comes from a library that isn't simulated, so calls on '${decl.name}' are skipped.`)
+    const make = (name: string): Value => {
+      this.objects.push({ cls, name, pin: null, us: 1500, min: 544, max: 2400, attached: false })
+      return int(this.objects.length - 1)
+    }
+    if (!decl.isArray) { this.declare(decl.name, { type: cls, isConst: true, value: make(decl.name) }); return }
+    const size = Math.trunc(this.toNumber(this.eval(decl.size!)))
+    if (size <= 0 || size > 32) this.fail(`object array '${decl.name}' has an invalid size (${size})`)
+    this.declare(decl.name, { type: cls, isConst: true, arr: Array.from({ length: size }, (_, i) => make(`${decl.name}[${i}]`)) })
+  }
+
   coerce(type: string, value: Value): Value {
     if (type === 'auto') return value
+    if (type !== 'String' && type !== 'float' && type !== 'bool' && !INT_TYPES[type] && !TYPE_WORDS.has(type)) return value
     if (type === 'String') return { t: 's', v: this.toText(value) }
     if (value.t === 's') this.fail(`cannot convert text to '${type}'`)
     const n = value.v
@@ -1385,6 +1465,7 @@ class Machine {
       case 'var':
         for (const decl of s.decls) {
           this.line = decl.line
+          if (s.isObject) { this.declareObject(s.type, decl); continue }
           if (decl.isArray) {
             if (decl.init?.k === 'str') { this.declare(decl.name, { type: 'String', isConst: s.isConst, value: { t: 's', v: decl.init.v } }); continue }
             const items = decl.init?.k === 'list' ? decl.init.items.map((item) => this.coerce(s.type, this.eval(item))) : []
@@ -1587,6 +1668,8 @@ class Machine {
 
   private call(e: Extract<Expr, { k: 'call' }>): Value {
     if (e.obj === 'Serial') return this.callSerial(e)
+    if (e.obj === 'Wire') return this.callWire(e)
+    if (e.obj) return this.callObject(e)
     if (this.program.fns.has(e.name)) return this.callUser(e.name, e.args, e.line)
     if (['bitSet', 'bitClear', 'bitWrite'].includes(e.name)) {
       const current = Math.trunc(this.toNumber(this.getTarget(e.args[0])))
@@ -1611,6 +1694,8 @@ class Machine {
       case 'millis': return int(Math.floor(this.timeMs))
       case 'micros': return int(Math.floor(this.timeMs * 1000))
       case 'tone': this.hwTone(args); return int(0)
+      case 'pulseIn':
+      case 'pulseInLong': return this.hwPulseIn(args)
       case 'noTone': this.hwNoTone(args); return int(0)
       case 'map': {
         if (n(2) === n(1)) this.fail('map(): fromLow and fromHigh are equal (division by zero)')
@@ -1643,6 +1728,216 @@ class Machine {
       case 'F': return args[0]
     }
     return this.fail(`'${e.name}' was not declared in this scope`)
+  }
+
+  private callObject(e: Extract<Expr, { k: 'call' }>): Value {
+    const slot = this.findSlot(e.obj!)
+    let handle: Value | undefined = slot?.value
+    if (e.index) {
+      const index = Math.trunc(this.toNumber(this.eval(e.index)))
+      if (!slot?.arr || index < 0 || index >= slot.arr.length) this.fail(`index ${index} is outside object array '${e.obj}'`)
+      handle = slot.arr[index]
+    }
+    const object = handle && handle.t !== 's' ? this.objects[handle.v] : undefined
+    if (!object) return this.fail(`'${e.obj}' is not an object`)
+    const args = e.args.map((arg) => this.eval(arg))
+    this.line = e.line
+    if (object.cls !== 'Servo') {
+      this.warn(`${object.name}.${e.name}() was skipped: the ${object.cls} library isn't simulated.`)
+      return int(0)
+    }
+    return this.callServo(object, e.name, args)
+  }
+
+  private callServo(servo: LibraryObject, method: string, args: Value[]): Value {
+    const call = `${servo.name}.${method}(${args.map((arg) => this.toText(arg)).join(', ')})`
+    const n = (i: number) => Math.trunc(this.toNumber(args[i]))
+    switch (method) {
+      case 'attach': {
+        const pin = this.resolvePin(args[0], `${servo.name}.attach`)
+        if (!pin) return int(0)
+        const before = this.snapshot()
+        servo.pin = pin
+        servo.attached = true
+        if (args.length >= 3) { servo.min = n(1); servo.max = n(2) }
+        this.regs[`DDR${pin.port}`] |= 1 << pin.bit
+        for (const id of ['D9', 'D10']) {
+          if (this.pwm[id] !== undefined) { delete this.pwm[id]; this.warn('Attaching a servo takes over Timer1, so analogWrite() on D9 and D10 stops working.') }
+        }
+        this.emit('servo', call, pin, [
+          this.codeStep(call),
+          ...this.pinSteps(pin),
+          { kind: 'REGISTER', title: `DDR${pin.port} · bit ${pin.bit} → 1`, description: `attach() makes ${pin.mcuPin} an output for the control pulses.` },
+          { kind: 'TIMER', title: 'Timer1 → servo timing', description: 'The Servo library takes over the 16-bit Timer1 (one tick = 0.5 µs). While it runs, analogWrite() on D9 and D10 stops working.' },
+          { kind: 'SIGNAL', title: `${pin.mcuPin} = ${servo.us} µs pulse every 20 ms`, description: 'A 50 Hz pulse train; the pulse width encodes the angle.' },
+          this.physicalStep(pin),
+        ], `servo on ${pin.id}`, `attach() connects the servo signal wire to ${pin.id}. Timer1 interrupts then raise ${pin.mcuPin} for ${servo.us} µs every 20 ms.`, before)
+        return int(1)
+      }
+      case 'write':
+      case 'writeMicroseconds': {
+        const value = n(0)
+        const us = method === 'write' && value < 544
+          ? Math.round(servo.min + ((Math.max(0, Math.min(180, value))) * (servo.max - servo.min)) / 180)
+          : Math.max(servo.min, Math.min(servo.max, value))
+        const before = this.snapshot()
+        servo.us = us
+        if (!servo.attached || !servo.pin) {
+          this.warn(`${servo.name}.${method}() was called before ${servo.name}.attach(), so no pulses are sent.`)
+          return int(0)
+        }
+        const pin = servo.pin
+        const angle = servoAngle(servo)
+        this.emit('servo', call, pin, [
+          this.codeStep(call),
+          { kind: 'TIMER', title: `Timer1 · OCR1A ← ${us * 2}`, description: method === 'write' ? `${Math.max(0, Math.min(180, value))}° maps to a ${us} µs pulse (${servo.min}–${servo.max} µs for 0–180°). At 0.5 µs per tick that's ${us * 2} ticks.` : `A ${us} µs pulse is ${us * 2} Timer1 ticks.` },
+          { kind: 'SIGNAL', title: `${pin.mcuPin} = ${us} µs pulse every 20 ms`, description: `${pin.mcuPin} goes HIGH, and the compare match pulls it LOW after ${us} µs.` },
+          this.physicalStep(pin),
+        ], `servo → ${angle}°`, `write() only changes the pulse width; the servo's own electronics move the horn to ${angle}°. It takes roughly 0.1 s per 60° to get there.`, before)
+        return int(0)
+      }
+      case 'read': return int(servoAngle(servo))
+      case 'readMicroseconds': return int(servo.us)
+      case 'attached': return int(servo.attached ? 1 : 0)
+      case 'detach': {
+        if (!servo.attached || !servo.pin) return int(0)
+        const before = this.snapshot()
+        const pin = servo.pin
+        servo.attached = false
+        this.emit('servo', call, pin, [
+          this.codeStep(call),
+          { kind: 'TIMER', title: 'Timer1 pulses → off', description: `No more pulses on ${pin.mcuPin}; the servo stops holding its position.` },
+          this.physicalStep(pin),
+        ], 'servo released', 'detach() stops the control pulses, so the servo no longer resists being turned.', before)
+        return int(0)
+      }
+    }
+    return this.fail(`'class Servo' has no member named '${method}'`)
+  }
+
+  private hwPulseIn(args: Value[]): Value {
+    const pin = this.resolvePin(args[0], 'pulseIn')
+    if (!pin) return int(0)
+    const level = this.toNumber(args[1]) ? 'HIGH' : 'LOW'
+    const timeout = args[2] ? Math.trunc(this.toNumber(args[2])) : 1_000_000
+    if (this.pinState(pin).output) this.warn(`pulseIn(${pinNumberLabel(pin)}, …): ${pin.id} is an OUTPUT. Use pinMode(${pinNumberLabel(pin)}, INPUT) for an echo pin.`)
+    const before = this.snapshot()
+    // Simulated scene for ultrasonic sensors: with a sweeping servo, an object sits ~18 cm away between 25° and 55°.
+    const servo = this.objects.find((object) => object.cls === 'Servo' && object.attached)
+    const angle = servo ? servoAngle(servo) : null
+    const distance = angle === null ? 30 : angle >= 25 && angle <= 55 ? 18 : 120
+    let duration = Math.round(distance * 58.2)
+    if (duration > timeout) duration = 0
+    this.timeMs += (duration || timeout) / 1000
+    const call = `pulseIn(${pinNumberLabel(pin)}, ${level})`
+    this.emit('pulse', call, pin, [
+      this.codeStep(call),
+      ...this.pinSteps(pin),
+      { kind: 'REGISTER', title: `PIN${pin.port} · bit ${pin.bit} polled`, description: `pulseIn() keeps reading PIN${pin.port} bit ${pin.bit}: it waits for ${pin.mcuPin} to go ${level}, then counts CPU cycles until it changes back.` },
+      { kind: 'SIGNAL', title: duration ? `${pin.mcuPin} ${level} for ${duration} µs` : `No pulse within ${timeout} µs`, description: angle !== null ? `Simulated scene: an object ${distance} cm away while the servo points at ${angle}°.` : `Simulated echo from an object ${distance} cm away.` },
+      { kind: 'VALUE', title: `pulseIn() returns ${duration}`, description: duration ? `For an HC-SR04 echo: ${duration} µs / 58 ≈ ${Math.round(duration / 58)} cm (sound travels 0.0343 cm/µs, there and back).` : 'A timeout returns 0.' },
+    ], `${duration} µs`, `pulseIn() measures how long ${pin.id} stays ${level}. With an ultrasonic sensor that is the echo's round-trip time, which gives the distance.`, before)
+    return int(duration)
+  }
+
+  private i2cDevice(address: number): number[] {
+    if (!this.i2c.devices[address]) {
+      const registers = new Array<number>(256).fill(0)
+      if (address === 0x68 || address === 0x69) { registers[0x75] = 0x68; registers[0x6b] = 0x40 }
+      this.i2c.devices[address] = registers
+    }
+    return this.i2c.devices[address]
+  }
+
+  private readI2cRegister(address: number, register: number): number {
+    const registers = this.i2cDevice(address)
+    const reg = register & 0xff
+    if ((address === 0x68 || address === 0x69) && reg >= 0x3b && reg <= 0x48) return registers[0x6b] & 0x40 ? 0 : MPU6050_DATA[reg - 0x3b]
+    return registers[reg]
+  }
+
+  private callWire(e: Extract<Expr, { k: 'call' }>): Value {
+    const args = e.args.map((arg) => this.eval(arg))
+    this.line = e.line
+    const n = (i: number) => Math.trunc(this.toNumber(args[i]))
+    const sda = pinMap.find((pin) => pin.id === 'A4')!
+    const bytes = (list: number[]) => list.map((b) => b.toString(16).toUpperCase().padStart(2, '0')).join(' ')
+    const busStep: TraceStep = { kind: 'PIN', title: 'A4 / A5 → SDA / SCL', description: 'I²C uses PC4 (SDA, data) and PC5 (SCL, clock). Both lines are pulled up and shared by every device on the bus.' }
+    switch (e.name) {
+      case 'begin': {
+        const before = this.snapshot()
+        this.i2c.begun = true
+        this.regs.TWBR = 72
+        this.regs.TWCR = 0x45
+        this.regs.PORTC |= 0x30
+        this.emit('i2c', 'Wire.begin()', sda, [
+          this.codeStep('Wire.begin()'),
+          { kind: 'REGISTER', title: 'TWBR ← 72', description: 'Sets the I²C clock to 100 kHz: 16 MHz / (16 + 2 × 72).' },
+          { kind: 'REGISTER', title: 'TWCR ← 0x45', description: 'Enables the TWI (two-wire interface) hardware, acknowledgements and its interrupt.' },
+          busStep,
+          { kind: 'PHYSICAL', title: 'I²C bus ready @ 100 kHz', description: 'A4 and A5 now belong to the I²C bus, so they can no longer be used as analog inputs.' },
+        ], 'I²C @ 100 kHz', 'Wire.begin() turns on the ATmega328P TWI peripheral on A4 (SDA) and A5 (SCL).', before)
+        return int(0)
+      }
+      case 'end': this.i2c.begun = false; this.regs.TWCR = 0; return int(0)
+      case 'setClock': this.regs.TWBR = Math.max(0, Math.round((16_000_000 / Math.max(1, n(0)) - 16) / 2)); return int(0)
+      case 'beginTransmission': this.i2c.address = n(0) & 0x7f; this.i2c.tx = []; return int(0)
+      case 'write': {
+        const data = args[0].t === 's' ? [...args[0].v].map((char) => char.charCodeAt(0) & 0xff) : [n(0) & 0xff]
+        this.i2c.tx.push(...data)
+        return int(data.length)
+      }
+      case 'endTransmission': {
+        if (!this.i2c.begun) this.warn('Wire.endTransmission() before Wire.begin(): the I²C hardware is still off.')
+        const before = this.snapshot()
+        const address = this.i2c.address
+        const data = this.i2c.tx
+        const registers = this.i2cDevice(address)
+        if (data.length) {
+          this.i2c.pointer[address] = data[0]
+          data.slice(1).forEach((value, i) => { registers[(data[0] + i) & 0xff] = value })
+        }
+        const device = I2C_DEVICES[address] ?? 'I²C device'
+        const isMpu = address === 0x68 || address === 0x69
+        const meaning = data.length >= 2 && isMpu && data[0] === 0x6b
+          ? `PWR_MGMT_1 ← ${hex2(data[1])}: the MPU6050 ${data[1] & 0x40 ? 'goes to sleep' : 'wakes up'}`
+          : data.length >= 2 ? `register ${hex2(data[0])} ← ${bytes(data.slice(1))}` : data.length === 1 ? `register pointer → ${hex2(data[0])}` : 'address probe'
+        const call = `Wire → ${hex2(address)} [${bytes(data)}]`
+        this.emit('i2c', call, sda, [
+          this.codeStep(call),
+          busStep,
+          { kind: 'REGISTER', title: `TWDR ← ${hex2(address << 1)}`, description: `START, then the 7-bit address ${hex2(address)} + WRITE bit. The ${device} pulls SDA low to acknowledge.` },
+          ...(data.length ? [{ kind: 'REGISTER', title: `TWDR ← ${bytes(data)}`, description: 'Each byte goes through TWDR and is clocked out on SCL; the device acknowledges every byte.' }] : []),
+          { kind: 'SIGNAL', title: `START · ${hex2(address << 1)}${data.length ? ` · ${bytes(data)}` : ''} · STOP`, description: 'What a logic analyser would show on SDA/SCL.' },
+          { kind: 'PHYSICAL', title: `${device}: ${meaning}`, description: 'endTransmission() returns 0: the device acknowledged.' },
+        ], `I²C write ${hex2(address)}`, `Wire.beginTransmission(), write() and endTransmission() send bytes to the device at ${hex2(address)} (${device}) over the I²C bus.`, before)
+        this.i2c.tx = []
+        return int(0)
+      }
+      case 'requestFrom': {
+        const before = this.snapshot()
+        const address = n(0) & 0x7f
+        const count = Math.max(0, Math.min(32, n(1)))
+        const start = this.i2c.pointer[address] ?? 0
+        const data = Array.from({ length: count }, (_, i) => this.readI2cRegister(address, start + i))
+        this.i2c.pointer[address] = (start + count) & 0xff
+        this.i2c.rx = data
+        const device = I2C_DEVICES[address] ?? 'I²C device'
+        const asleep = (address === 0x68 || address === 0x69) && (this.i2cDevice(address)[0x6b] & 0x40) && start <= 0x48 && start + count > 0x3b
+        const call = `Wire ← ${hex2(address)} ×${count}`
+        this.emit('i2c', call, sda, [
+          this.codeStep(call),
+          busStep,
+          { kind: 'REGISTER', title: `TWDR ← ${hex2((address << 1) | 1)}`, description: `START with the address ${hex2(address)} + READ bit.` },
+          { kind: 'REGISTER', title: `TWDR → ${bytes(data) || '(none)'}`, description: `The ${device} sends ${count} byte${count === 1 ? '' : 's'} starting at register ${hex2(start)}; the MCU acknowledges all but the last.` },
+          { kind: 'VALUE', title: `${count} byte${count === 1 ? '' : 's'} ready for Wire.read()`, description: asleep ? 'All zeros: the MPU6050 is still asleep. Write 0 to register 0x6B (PWR_MGMT_1) to wake it.' : 'Read them one at a time with Wire.read().' },
+        ], `I²C read ${count} B`, `Wire.requestFrom() reads ${count} bytes from the ${device} at ${hex2(address)}.`, before)
+        return int(count)
+      }
+      case 'read': return int(this.i2c.rx.length ? this.i2c.rx.shift()! : -1)
+      case 'available': return int(this.i2c.rx.length)
+    }
+    return this.fail(`'Wire.${e.name}()' isn't supported by the simulator`)
   }
 
   private callSerial(e: Extract<Expr, { k: 'call' }>): Value {
@@ -1760,7 +2055,7 @@ export function pinModeIn(snapshot: Snapshot, pin: PinDefinition): { mode: PinMo
   const mask = 1 << pin.bit
   const output = (snapshot.regs[`DDR${pin.port}`] & mask) !== 0
   const portBit = (snapshot.regs[`PORT${pin.port}`] & mask) !== 0
-  return { mode: output ? 'OUTPUT' : portBit ? 'INPUT_PULLUP' : 'INPUT', level: portBit || snapshot.pwm[pin.id] || snapshot.tones[pin.id] ? 'HIGH' : 'LOW' }
+  return { mode: output ? 'OUTPUT' : portBit ? 'INPUT_PULLUP' : 'INPUT', level: portBit || snapshot.pwm[pin.id] || snapshot.tones[pin.id] || snapshot.servos[pin.id] !== undefined ? 'HIGH' : 'LOW' }
 }
 
 export const SIMULATOR_LIMITS = { loopIterations: MAX_LOOP_ITERATIONS, events: MAX_EVENTS }

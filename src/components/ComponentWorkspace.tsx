@@ -1,18 +1,20 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { COMPONENT_PROFILES, type ComponentProfileId } from '../data/componentCatalog'
 import type { Detection } from '../ml/detector'
 import { BoardDesigner } from './BoardDesigner'
 import { ComponentInventory, type ResistorValues } from './ComponentInventory'
 import { DetectedComponentsPanel } from './DetectedComponentsPanel'
+import type { InventoryPart } from '../sim/componentDetection'
 
 type ClassCorrection = {
   classId: number
   className: ComponentProfileId
 }
 
-export function ComponentWorkspace({ detections, onOpenCodeVisualizer }: {
+export function ComponentWorkspace({ detections, onOpenCodeVisualizer, onInventoryChange }: {
   detections: Detection[]
   onOpenCodeVisualizer: (code: string) => void
+  onInventoryChange?: (parts: InventoryPart[]) => void
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [manualItems, setManualItems] = useState<Detection[]>([])
@@ -33,6 +35,23 @@ export function ComponentWorkspace({ detections, onOpenCodeVisualizer }: {
     }
   })
   const inventory = [...editableCameraItems, ...manualItems]
+
+  // Report confirmed camera items and manually added parts so Learn Mode can teach them.
+  const reportedParts: InventoryPart[] = inventory
+    .filter((item) => item.source === 'manual' || item.confirmed)
+    .map((item) => ({ profileId: item.className, source: item.source === 'manual' ? 'manual' : 'camera' }))
+  const reportedKey = JSON.stringify(reportedParts)
+  const reportRef = useRef(onInventoryChange)
+  const hasReported = useRef(false)
+  useEffect(() => { reportRef.current = onInventoryChange })
+  useEffect(() => {
+    // Opening the scanner starts with an empty inventory; only report it once the user has added parts,
+    // so a previously saved project isn't wiped on mount.
+    const parts = JSON.parse(reportedKey) as InventoryPart[]
+    if (!parts.length && !hasReported.current) return
+    hasReported.current = true
+    reportRef.current?.(parts)
+  }, [reportedKey])
 
   function addManual(profileId: ComponentProfileId) {
     const profile = COMPONENT_PROFILES[profileId]

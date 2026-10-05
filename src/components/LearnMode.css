@@ -1,0 +1,251 @@
+.lesson-list-divider {
+  margin: 10px 0 0;
+  padding-top: 14px;
+  border-top: 1px solid rgba(132, 154, 161, 0.12);
+}
+
+.component-item strong {
+  display: grid;
+  gap: 2px;
+}
+
+.component-item strong small {
+  color: var(--muted);
+  font: 0.62rem var(--mono);
+  letter-spacing: 0.06em;
+}
+
+.component-item > span {
+  flex: none;
+}
+
+.learn-empty {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px dashed rgba(132, 154, 161, 0.24);
+  border-radius: 12px;
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.55;
+}
+
+.learn-empty p {
+  margin: 0;
+}
+
+.learn-empty div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.learn-empty button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  border: 1px solid rgba(97, 217, 221, 0.25);
+  border-radius: 9px;
+  background: rgba(97, 217, 221, 0.06);
+  color: var(--text);
+  font-size: 0.74rem;
+  cursor: pointer;
+}
+
+.component-lesson-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.component-lesson-heading .eyebrow {
+  margin-bottom: 0;
+}
+
+.component-lesson-sources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.source-badge {
+  padding: 4px 8px;
+  border: 1px solid rgba(97, 217, 221, 0.3);
+  border-radius: 999px;
+  background: rgba(97, 217, 221, 0.08);
+  color: var(--accent-light);
+  font: 0.55rem var(--mono);
+  letter-spacing: 0.1em;
+}
+
+.source-badge.is-camera {
+  border-color: rgba(141, 224, 192, 0.32);
+  background: rgba(141, 224, 192, 0.08);
+  color: var(--mint);
+}
+
+.source-badge.is-manual {
+  border-color: rgba(237, 180, 109, 0.32);
+  background: rgba(237, 180, 109, 0.08);
+  color: var(--amber);
+}
+
+.lesson-detail .component-lesson-summary {
+  margin: 0;
+  color: var(--text);
+  font-size: 1.02rem;
+}
+
+.lesson-detail .component-lesson-note {
+  margin: 0;
+  padding: 9px 12px;
+  border-left: 2px solid var(--amber);
+  border-radius: 6px;
+  background: rgba(237, 180, 109, 0.07);
+  color: #f3d3a5;
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.component-lesson-section h3 {
+  margin: 4px 0 8px;
+  color: var(--accent-light);
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.lesson-detail .component-lesson-section p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.component-lesson-section ul {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 12px;
+  padding-left: 18px;
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+
+.signal-chain {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.signal-chain li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.signal-chain li > span {
+  padding: 7px 10px;
+  border: 1px solid rgba(97, 217, 221, 0.24);
+  border-radius: 9px;
+  background: rgba(97, 217, 221, 0.07);
+  color: var(--text);
+  font: 0.74rem var(--mono);
+}
+
+.signal-chain li > svg {
+  color: var(--cyan);
+}
+
+.component-signal-path > span:last-child {
+  font-size: 0.78rem;
+}
+
+.component-lesson-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 18px;
+}
+
+.component-pin-table {
+  width: 100%;
+  margin-bottom: 12px;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.component-pin-table caption {
+  padding-bottom: 6px;
+  color: var(--dim);
+  font: 0.58rem var(--mono);
+  letter-spacing: 0.12em;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.component-pin-table th,
+.component-pin-table td {
+  padding: 7px 8px;
+  border-bottom: 1px solid rgba(132, 154, 161, 0.1);
+  text-align: left;
+  vertical-align: top;
+}
+
+.component-pin-table th {
+  width: 42%;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.component-pin-table td {
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 0.74rem;
+}
+
+.component-evidence {
+  list-style: none;
+  padding-left: 0 !important;
+}
+
+.component-evidence li {
+  display: flex;
+  gap: 10px;
+  min-width: 0;
+}
+
+.component-evidence span {
+  flex: none;
+  color: var(--dim);
+  font: 0.7rem var(--mono);
+}
+
+.component-evidence code {
+  overflow: hidden;
+  color: var(--accent-light);
+  font: 0.74rem var(--mono);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.component-code {
+  margin: 0;
+  padding: 12px 14px;
+  overflow-x: auto;
+  border: 1px solid rgba(132, 154, 161, 0.14);
+  border-radius: 10px;
+  background: #0a0f10;
+  color: #b9f5d8;
+  font: 0.76rem/1.6 var(--mono);
+}
+
+@media (max-width: 960px) {
+  .component-lesson-grid {
+    grid-template-columns: 1fr;
+  }
+}

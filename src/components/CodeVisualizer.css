@@ -236,3 +236,37 @@
   min-width: 0;
   scroll-margin-top: 16px;
 }
+
+.detected-parts {
+  display: grid;
+  gap: 10px;
+  padding-bottom: 12px;
+  border: 1px solid rgba(97, 217, 221, 0.22);
+  border-radius: 12px;
+  background: rgba(97, 217, 221, 0.04);
+  overflow: hidden;
+}
+
+.detected-parts-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 12px;
+}
+
+.detected-parts-list span {
+  padding: 5px 9px;
+  border: 1px solid rgba(132, 154, 161, 0.2);
+  border-radius: 999px;
+  background: rgba(13, 18, 20, 0.8);
+  color: var(--text);
+  font-size: 0.72rem;
+}
+
+.detected-parts .secondary-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  justify-self: start;
+  margin: 0 12px;
+}
