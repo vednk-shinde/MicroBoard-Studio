@@ -1,0 +1,132 @@
+.language-switcher-container {
+  position: relative;
+  display: inline-block;
+  z-index: 100;
+}
+
+.language-switcher-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-surface-elevated, #161b22);
+  border: 1px solid var(--border-color, #30363d);
+  color: var(--text-primary, #e6edf3);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.language-switcher-btn:hover {
+  background: var(--bg-hover, #21262d);
+  border-color: var(--border-hover, #8b949e);
+}
+
+.compact .language-switcher-btn {
+  padding: 5px 8px;
+}
+
+.globe-icon {
+  color: var(--accent-color, #58a6ff);
+}
+
+.lang-flag {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.lang-name {
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.chevron-icon {
+  color: #8b949e;
+  transition: transform 0.2s ease;
+}
+
+.chevron-icon.open {
+  transform: rotate(180deg);
+}
+
+.language-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 180px;
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  animation: dropdownFadeIn 0.15s ease-out;
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dropdown-header {
+  padding: 6px 10px 4px 10px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #8b949e;
+}
+
+.language-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 10px;
+  border: none;
+  background: transparent;
+  color: #c9d1d9;
+  font-size: 13px;
+  border-radius: 5px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.language-option:hover {
+  background: #21262d;
+  color: #ffffff;
+}
+
+.language-option.active {
+  background: rgba(56, 139, 253, 0.15);
+  color: #58a6ff;
+  font-weight: 600;
+}
+
+.option-flag {
+  font-size: 15px;
+}
+
+.option-name {
+  flex: 1;
+}
+
+.active-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #58a6ff;
+  box-shadow: 0 0 6px #58a6ff;
+}
