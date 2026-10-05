@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Activity, ArrowRight, BookOpen, Cable, Camera, ChevronRight, CircleHelp, Code2, Cpu, Gauge, LayoutDashboard, Lightbulb, Menu, Settings2, Usb, X } from 'lucide-react'
 import { ArduinoBoard } from './components/ArduinoBoard'
 import { CameraScanner } from './components/CameraScanner'
+import { ChatAssistant } from './components/ChatAssistant'
 import { CodeVisualizer } from './components/CodeVisualizer'
 import { LearnMode } from './components/LearnMode'
 import { PeripheralMapper } from './components/PeripheralMapper'
@@ -343,6 +344,7 @@ function App() {
         <div className="content-area" key={page}>{renderPage()}</div>
         <footer className="app-footer"><span><i /> SIMULATION ENVIRONMENT</span><span>UNO R3 <b>·</b> ATMEGA328P <b>·</b> 16 MHz</span></footer>
       </main>
+      <ChatAssistant pageLabel={navItems.find((item) => item.id === page)?.label ?? 'Dashboard'} parts={projectParts} />
       {toast && <div className="toast-message" role="status"><CircleHelp size={16} /><span>{toast}</span><button type="button" onClick={() => setToast('')} aria-label="Dismiss notification"><X size={15} /></button></div>}
     </div>
   )
