@@ -8,7 +8,8 @@
     "build": "npm run assistant:prompt && tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "assistant:prompt": "tsx scripts/build-assistant-prompt.ts"
+    "assistant:prompt": "tsx scripts/build-assistant-prompt.ts",
+    "assistant:eval": "tsx scripts/assistant-eval.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.131.0",

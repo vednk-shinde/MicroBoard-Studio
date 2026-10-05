@@ -1,11 +1,11 @@
 import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react'
-import { Bot, MessageCircle, RotateCcw, Send, Sparkles, X } from 'lucide-react'
-import { answerLocally, SUGGESTED_QUESTIONS } from '../assistant/knowledge'
+import { Bot, Check, Copy, MessageCircle, RotateCcw, Send, X } from 'lucide-react'
+import { answerLocally, BOT_NAME, GREETING } from '../assistant/knowledge'
 import { COMPONENT_LESSONS } from '../data/componentLessons'
 import type { ProjectComponent } from '../sim/componentDetection'
 import './ChatAssistant.css'
 
-type ChatMessage = { role: 'user' | 'assistant'; text: string; mode?: 'ai' | 'local'; related?: string[] }
+type ChatMessage = { role: 'user' | 'assistant'; text: string }
 
 type ChatAssistantProps = {
   pageLabel: string
@@ -14,6 +14,13 @@ type ChatAssistantProps = {
 
 const SKETCH_STORAGE_KEY = 'microboard.sketch.v1'
 const FAILURE_MARKER = '\u0000'
+const WELCOME: ChatMessage = { role: 'assistant', text: GREETING }
+
+// Offline replies, adjusted so a second "hi" doesn't repeat the full introduction already on screen.
+function offlineReply(question: string): string {
+  const reply = answerLocally(question).text
+  return reply === GREETING ? 'Hey! What are you building today? Tell me the parts you have, or paste the sketch you\'re stuck on.' : reply
+}
 
 function currentSketch(): string {
   try {
@@ -28,10 +35,11 @@ function buildContext(pageLabel: string, parts: ProjectComponent[]): string {
     ? parts.map((part) => `${COMPONENT_LESSONS[part.id].name}${part.pins.length ? ` (${part.pins.map((pin) => `${pin.role}=${pin.pin}`).join(', ')})` : ''}`).join('; ')
     : 'none detected yet'
   const sketch = currentSketch().slice(0, 8000)
-  return `Current page: ${pageLabel}\nProject components: ${components}\nSketch in the Code Visualizer editor:\n${sketch || '(empty)'}`
+  return `The chat window already greeted the user with your introduction, so don't introduce yourself again unless asked.\nCurrent page: ${pageLabel}\nProject components: ${components}\nSketch in the Code Visualizer editor:\n${sketch || '(empty)'}`
 }
 
-// ---- minimal, safe formatting: **bold**, `code`, fenced code blocks, "- " / "1. " lists
+// ---- lightweight, safe rendering of the reply format: paragraphs, **bold**, `code`, ```code blocks```,
+// lists, ### headings and markdown tables (React elements only, never raw HTML)
 
 function inline(text: string): ReactNode[] {
   return text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g).filter(Boolean).map((part, index) => {
@@ -41,49 +49,96 @@ function inline(text: string): ReactNode[] {
   })
 }
 
+function CodeBlock({ code, language }: { code: string; language: string }) {
+  const [copied, setCopied] = useState(false)
+  return (
+    <div className="chat-code">
+      <div className="chat-code-bar">
+        <span>{language || 'code'}</span>
+        <button type="button" onClick={() => { void navigator.clipboard?.writeText(code).then(() => { setCopied(true); window.setTimeout(() => setCopied(false), 1500) }) }}>
+          {copied ? <><Check size={12} /> Copied</> : <><Copy size={12} /> Copy</>}
+        </button>
+      </div>
+      <pre><code>{code}</code></pre>
+    </div>
+  )
+}
+
+function splitRow(line: string): string[] {
+  return line.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map((cell) => cell.trim())
+}
+
 function RichText({ text }: { text: string }) {
   const blocks: ReactNode[] = []
-  text.split(/```[a-zA-Z]*\n?/).forEach((chunk, chunkIndex) => {
-    if (chunkIndex % 2 === 1) {
-      blocks.push(<pre key={`code-${chunkIndex}`}><code>{chunk.replace(/\n$/, '')}</code></pre>)
-      return
+  const segments = text.split(/```([a-zA-Z+#]*)\n?/)
+  // Each fence adds a capture, so split() yields [text, openLang, code, closeLang, text, openLang, code, …].
+  for (let index = 0; index < segments.length; index += 4) {
+    renderText(segments[index], `t${index}`, blocks)
+    // An unclosed fence (still streaming) also renders as a code block.
+    if (segments[index + 2] !== undefined) {
+      blocks.push(<CodeBlock key={`c${index}`} language={segments[index + 1] ?? ''} code={segments[index + 2].replace(/\n$/, '')} />)
     }
-    let list: { ordered: boolean; items: string[] } | null = null
-    const flush = (key: string) => {
-      if (!list) return
-      const items = list.items.map((item, index) => <li key={index}>{inline(item)}</li>)
-      blocks.push(list.ordered ? <ol key={key}>{items}</ol> : <ul key={key}>{items}</ul>)
-      list = null
-    }
-    chunk.split('\n').forEach((line, lineIndex) => {
-      const key = `${chunkIndex}-${lineIndex}`
-      const bullet = line.match(/^\s*[-*•]\s+(.*)$/)
-      const numbered = line.match(/^\s*\d+[.)]\s+(.*)$/)
-      if (bullet || numbered) {
-        const ordered = Boolean(numbered)
-        if (list && list.ordered !== ordered) flush(`list-${key}`)
-        if (!list) list = { ordered, items: [] }
-        list.items.push((bullet ?? numbered)![1])
-        return
-      }
-      flush(`list-${key}`)
-      if (line.trim()) blocks.push(<p key={key}>{inline(line)}</p>)
-    })
-    flush(`list-end-${chunkIndex}`)
-  })
+  }
   return <>{blocks}</>
+}
+
+function renderText(chunk: string, keyPrefix: string, blocks: ReactNode[]) {
+  const lines = chunk.split('\n')
+  let list: { ordered: boolean; items: string[] } | null = null
+  const flushList = (key: string) => {
+    if (!list) return
+    const items = list.items.map((item, index) => <li key={index}>{inline(item)}</li>)
+    blocks.push(list.ordered ? <ol key={key}>{items}</ol> : <ul key={key}>{items}</ul>)
+    list = null
+  }
+  for (let index = 0; index < lines.length; index++) {
+    const line = lines[index]
+    const key = `${keyPrefix}-${index}`
+    // Markdown table: a header row followed by a |---|---| separator.
+    if (line.includes('|') && /^\s*\|?\s*:?-{2,}/.test(lines[index + 1] ?? '')) {
+      flushList(`l-${key}`)
+      const header = splitRow(line)
+      const rows: string[][] = []
+      index += 2
+      while (index < lines.length && lines[index].includes('|')) rows.push(splitRow(lines[index++]))
+      index--
+      blocks.push(
+        <div className="chat-table" key={`tb-${key}`}>
+          <table>
+            <thead><tr>{header.map((cell, cellIndex) => <th key={cellIndex}>{inline(cell)}</th>)}</tr></thead>
+            <tbody>{rows.map((row, rowIndex) => <tr key={rowIndex}>{row.map((cell, cellIndex) => <td key={cellIndex}>{inline(cell)}</td>)}</tr>)}</tbody>
+          </table>
+        </div>,
+      )
+      continue
+    }
+    const heading = line.match(/^\s*#{1,4}\s+(.*)$/)
+    const bullet = line.match(/^\s*[-*•]\s+(.*)$/)
+    const numbered = line.match(/^\s*\d+[.)]\s+(.*)$/)
+    if (bullet || numbered) {
+      const ordered = Boolean(numbered)
+      if (list && list.ordered !== ordered) flushList(`l-${key}`)
+      if (!list) list = { ordered, items: [] }
+      list.items.push((bullet ?? numbered)![1])
+      continue
+    }
+    flushList(`l-${key}`)
+    if (heading) blocks.push(<h4 key={key}>{inline(heading[1])}</h4>)
+    else if (line.trim()) blocks.push(<p key={key}>{inline(line)}</p>)
+  }
+  flushList(`l-end-${keyPrefix}`)
 }
 
 export function ChatAssistant({ pageLabel, parts }: ChatAssistantProps) {
   const [open, setOpen] = useState(false)
-  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [messages, setMessages] = useState<ChatMessage[]>([WELCOME])
   const [input, setInput] = useState('')
   const [busy, setBusy] = useState(false)
   const [aiAvailable, setAiAvailable] = useState<boolean | null>(null)
   const listRef = useRef<HTMLDivElement | null>(null)
   const inputRef = useRef<HTMLTextAreaElement | null>(null)
 
-  // Ask the server once whether AI mode is configured (no API key → built-in answers).
+  // Ask the server once whether the AI backend is configured.
   useEffect(() => {
     if (!open || aiAvailable !== null) return
     let cancelled = false
@@ -105,37 +160,38 @@ export function ChatAssistant({ pageLabel, parts }: ChatAssistantProps) {
     if (list) list.scrollTop = list.scrollHeight
   }, [messages, open])
 
-  function answerOffline(question: string) {
-    const answer = answerLocally(question)
-    setMessages((current) => [...current.filter((message) => message.text !== ''), { role: 'assistant', text: answer.text, mode: 'local', related: answer.related }])
+  function replaceLastAssistant(text: string) {
+    setMessages((current) => [...current.slice(0, -1), { role: 'assistant', text }])
   }
 
   async function ask(question: string) {
     const text = question.trim()
     if (!text || busy) return
+    // The opening greeting is shown to the user but isn't part of the conversation sent to the model.
     const history = [...messages, { role: 'user' as const, text }]
-    setMessages(history)
+    setMessages([...history, { role: 'assistant', text: '' }])
     setInput('')
-
-    if (aiAvailable !== true) {
-      answerOffline(text)
-      return
-    }
-
     setBusy(true)
-    setMessages((current) => [...current, { role: 'assistant', text: '', mode: 'ai' }])
+
     try {
+      if (aiAvailable !== true) {
+        // Small pause so the reply doesn't appear before the typing indicator registers.
+        await new Promise((resolve) => window.setTimeout(resolve, 450))
+        replaceLastAssistant(offlineReply(text))
+        return
+      }
+      const conversation = history.filter((message, index) => !(index === 0 && message === WELCOME))
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          messages: history.slice(-12).map((message) => ({ role: message.role, content: message.text })),
+          messages: conversation.slice(-12).map((message) => ({ role: message.role, content: message.text })),
           context: buildContext(pageLabel, parts),
         }),
       })
       if (!response.ok || response.headers.get('X-Assistant-Mode') !== 'ai' || !response.body) {
         if (response.status === 503) setAiAvailable(false)
-        answerOffline(text)
+        replaceLastAssistant(response.status === 429 ? 'You\'re sending messages a bit fast. Give me a few seconds and ask again.' : offlineReply(text))
         return
       }
       const reader = response.body.getReader()
@@ -146,55 +202,41 @@ export function ChatAssistant({ pageLabel, parts }: ChatAssistantProps) {
         if (done) break
         received += decoder.decode(value, { stream: true })
         if (received.startsWith(FAILURE_MARKER)) continue
-        const partial = received
-        setMessages((current) => [...current.slice(0, -1), { role: 'assistant', text: partial, mode: 'ai' }])
+        replaceLastAssistant(received)
       }
-      if (!received.trim() || received.startsWith(FAILURE_MARKER)) answerOffline(text)
+      if (!received.trim() || received.startsWith(FAILURE_MARKER)) replaceLastAssistant(offlineReply(text))
     } catch {
-      answerOffline(text)
+      replaceLastAssistant(offlineReply(text))
     } finally {
       setBusy(false)
     }
   }
 
-  const modeLabel = aiAvailable ? 'AI' : 'Built-in answers'
+  const status = aiAvailable === null ? 'Connecting…' : aiAvailable ? 'Online' : 'Limited mode'
 
   return (
     <>
       {!open && (
-        <button type="button" className="chat-launcher" onClick={() => setOpen(true)} aria-label="Open the MicroBoard assistant">
-          <MessageCircle size={20} /><span>Ask MicroBoard</span>
+        <button type="button" className="chat-launcher" onClick={() => setOpen(true)} aria-label={`Chat with ${BOT_NAME}`}>
+          <MessageCircle size={20} /><span>Chat with {BOT_NAME}</span>
         </button>
       )}
       {open && (
-        <section className="chat-panel" role="dialog" aria-label="MicroBoard assistant">
+        <section className="chat-panel" role="dialog" aria-label={`${BOT_NAME} chat`}>
           <header className="chat-header">
-            <span className="chat-avatar"><Bot size={17} /></span>
+            <span className="chat-avatar"><Bot size={17} /><i className={aiAvailable ? 'is-online' : ''} /></span>
             <div>
-              <strong>MicroBoard assistant</strong>
-              <small className={aiAvailable ? 'is-ai' : ''}>{aiAvailable ? <Sparkles size={11} /> : null}{aiAvailable === null ? 'Connecting…' : modeLabel}</small>
+              <strong>{BOT_NAME}</strong>
+              <small className={aiAvailable ? 'is-online' : ''}>{status}</small>
             </div>
-            {messages.length > 0 && <button type="button" className="chat-icon-button" onClick={() => setMessages([])} aria-label="Start a new conversation" title="New conversation"><RotateCcw size={15} /></button>}
-            <button type="button" className="chat-icon-button" onClick={() => setOpen(false)} aria-label="Close the assistant" title="Close"><X size={17} /></button>
+            {messages.length > 1 && <button type="button" className="chat-icon-button" onClick={() => setMessages([WELCOME])} aria-label="Start a new conversation" title="New conversation"><RotateCcw size={15} /></button>}
+            <button type="button" className="chat-icon-button" onClick={() => setOpen(false)} aria-label="Close chat" title="Close"><X size={17} /></button>
           </header>
 
           <div className="chat-messages" ref={listRef} aria-live="polite">
-            {messages.length === 0 && (
-              <div className="chat-welcome">
-                <p>Hi! Ask me anything about MicroBoard Studio: the pages, the simulator, connecting your Arduino, pins and registers, or the components in your project.</p>
-                <div className="chat-suggestions">
-                  {SUGGESTED_QUESTIONS.map((question) => <button type="button" key={question} onClick={() => void ask(question)}>{question}</button>)}
-                </div>
-              </div>
-            )}
             {messages.map((message, index) => (
               <div key={index} className={`chat-message is-${message.role}`}>
-                {message.role === 'assistant' && message.text === '' ? <span className="chat-typing" aria-label="Thinking"><i /><i /><i /></span> : <RichText text={message.text} />}
-                {message.role === 'assistant' && message.related && message.related.length > 0 && index === messages.length - 1 && (
-                  <div className="chat-suggestions is-related">
-                    {message.related.map((question) => <button type="button" key={question} onClick={() => void ask(question)}>{question}</button>)}
-                  </div>
-                )}
+                {message.role === 'assistant' && message.text === '' ? <span className="chat-typing" aria-label={`${BOT_NAME} is typing`}><i /><i /><i /></span> : message.role === 'user' ? <p>{message.text}</p> : <RichText text={message.text} />}
               </div>
             ))}
           </div>
@@ -204,9 +246,9 @@ export function ChatAssistant({ pageLabel, parts }: ChatAssistantProps) {
               ref={inputRef}
               value={input}
               rows={1}
-              maxLength={2000}
-              placeholder="Ask about the project…"
-              aria-label="Your question"
+              maxLength={4000}
+              placeholder={`Message ${BOT_NAME}…`}
+              aria-label="Your message"
               onChange={(event) => setInput(event.target.value)}
               onKeyDown={(event) => {
                 if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); void ask(input) }
@@ -214,7 +256,6 @@ export function ChatAssistant({ pageLabel, parts }: ChatAssistantProps) {
             />
             <button type="submit" disabled={busy || !input.trim()} aria-label="Send"><Send size={16} /></button>
           </form>
-          <p className="chat-footnote">{aiAvailable ? 'AI answers can be wrong: check wiring before powering up.' : 'Answers come from the project\'s built-in knowledge.'}</p>
         </section>
       )}
     </>

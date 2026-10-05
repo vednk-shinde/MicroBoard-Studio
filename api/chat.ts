@@ -1,4 +1,4 @@
-// MicroBoard assistant: a Vercel serverless function that answers questions with Claude.
+// MicroBot, the MicroBoard Studio assistant: a Vercel serverless function that answers questions with Claude.
 // The API key stays here on the server (Vercel env var ANTHROPIC_API_KEY); without it the
 // web app falls back to its built-in answers.
 import Anthropic from '@anthropic-ai/sdk'
@@ -87,7 +87,8 @@ export async function POST(request: Request): Promise<Response> {
     // If a safety classifier declines, retry on Anthropic's recommended fallback model.
     betas: ['server-side-fallback-2026-07-01'],
     fallbacks: 'default',
-    output_config: { effort: 'medium' },
+    // Low effort keeps chat replies fast; the knowledge in the system prompt carries the accuracy.
+    output_config: { effort: 'low' },
     // The large, fixed knowledge prompt is cached, so repeat questions cost much less.
     system: [{ type: 'text', text: SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
     messages,
