@@ -19,3 +19,8 @@ ml/models/yolo11n_cpu_seed42_batch8-3/*
 !ml/models/yolo11n_cpu_seed42_batch8-3/weights/
 ml/models/yolo11n_cpu_seed42_batch8-3/weights/*
 !ml/models/yolo11n_cpu_seed42_batch8-3/weights/best.onnx
+**/.venv-*/
+ml/datasets/
+ml/runs/
+ml/weights/
+runs/

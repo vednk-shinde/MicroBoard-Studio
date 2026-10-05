@@ -48,3 +48,9 @@ ml/models/*/evaluation/
 *.sw?
 
 .vercel
+
+**/.venv-*/
+ml/datasets/
+ml/runs/
+ml/weights/
+runs/
