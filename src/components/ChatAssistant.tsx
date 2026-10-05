@@ -32,7 +32,11 @@ function currentSketch(): string {
 
 function buildContext(pageLabel: string, parts: ProjectComponent[]): string {
   const components = parts.length
-    ? parts.map((part) => `${COMPONENT_LESSONS[part.id].name}${part.pins.length ? ` (${part.pins.map((pin) => `${pin.role}=${pin.pin}`).join(', ')})` : ''}`).join('; ')
+    ? parts.map((part) => {
+      const pins = part.pins.length ? ` (${part.pins.map((pin) => `${pin.role}=${pin.pin}`).join(', ')})` : ''
+      const origin = part.sources.map((source) => (source === 'code' ? 'from sketch' : source === 'camera' ? 'seen on camera only, not electrically verified' : 'added manually')).join(', ')
+      return `${COMPONENT_LESSONS[part.id].name}${pins} [${origin}]`
+    }).join('; ')
     : 'none detected yet'
   const sketch = currentSketch().slice(0, 8000)
   return `The chat window already greeted the user with your introduction, so don't introduce yourself again unless asked.\nCurrent page: ${pageLabel}\nProject components: ${components}\nSketch in the Code Visualizer editor:\n${sketch || '(empty)'}`

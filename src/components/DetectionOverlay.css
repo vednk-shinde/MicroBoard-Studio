@@ -1,0 +1,23 @@
+/* Unconfirmed objects: visible, but clearly not a named component. */
+.detection-box.is-tentative {
+  border-style: dashed;
+  border-color: rgba(151, 166, 170, 0.7);
+  background: transparent;
+  box-shadow: none;
+}
+
+.detection-box.is-tentative .detection-label {
+  border-color: rgba(151, 166, 170, 0.3);
+  color: var(--muted);
+}
+
+.detection-box.is-ambiguous {
+  border-color: rgba(237, 180, 109, 0.9);
+  background: rgba(237, 180, 109, 0.05);
+  box-shadow: none;
+}
+
+.detection-box.is-ambiguous .detection-label {
+  border-color: rgba(237, 180, 109, 0.4);
+  color: var(--amber);
+}

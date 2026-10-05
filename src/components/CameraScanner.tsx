@@ -4,16 +4,21 @@ import { DetectionOverlay } from './DetectionOverlay'
 import { DetectedComponent } from './DetectedComponent'
 import { ComponentWorkspace } from './ComponentWorkspace'
 import type { InventoryPart } from '../sim/componentDetection'
-import type { ComponentDetector, Detection } from '../ml/detector'
+import type { ComponentDetector, Detection, DetectorInfo } from '../ml/detector'
+import { DetectionTracker } from '../ml/detectionPolicy'
+import { MODEL_META } from '../ml/modelMeta'
 import { OnnxDetector } from '../ml/onnxDetector'
 
 type CameraStatus = 'DISCONNECTED' | 'ACTIVE' | 'ERROR'
 type AiModelStatus = 'NOT LOADED' | 'LOADING' | 'READY' | 'ERROR'
-const INFERENCE_INTERVAL_MS = 1000
+// Pause between inferences. The model itself takes ≈ 100 ms (WebGPU) to ≈ 650 ms (WebAssembly worker),
+// so this gives ≈ 4 checks/s on WebGPU without keeping the GPU permanently busy.
+const INFERENCE_GAP_MS = 150
+const BACKEND_LABELS: Record<DetectorInfo['backend'], string> = { webgpu: 'WebGPU', 'wasm-worker': 'WASM worker', wasm: 'WASM' }
 
-function scoreDetection(detections: Detection[]): Detection | null {
-  if (!detections.length) return null
-  return [...detections].sort((a, b) => b.confidence - a.confidence)[0]
+function primaryDetection(detections: Detection[]): Detection | null {
+  const rank = (detection: Detection) => (detection.state === 'confirmed' ? 2 : detection.state === 'ambiguous' ? 1 : 0)
+  return [...detections].sort((a, b) => rank(b) - rank(a) || b.confidence - a.confidence)[0] ?? null
 }
 
 export function CameraScanner({ onOpenCodeVisualizer, onInventoryChange }: { onOpenCodeVisualizer: (code: string) => void; onInventoryChange?: (parts: InventoryPart[]) => void }) {
@@ -23,6 +28,7 @@ export function CameraScanner({ onOpenCodeVisualizer, onInventoryChange }: { onO
   const timerRef = useRef<number | null>(null)
   const detectingRef = useRef(false)
   const operationRef = useRef(0)
+  const trackerRef = useRef(new DetectionTracker(MODEL_META))
 
   const [cameraStatus, setCameraStatus] = useState<CameraStatus>('DISCONNECTED')
   const [aiModelStatus, setAiModelStatus] = useState<AiModelStatus>('NOT LOADED')
@@ -30,6 +36,8 @@ export function CameraScanner({ onOpenCodeVisualizer, onInventoryChange }: { onO
   const [selectedDetection, setSelectedDetection] = useState<Detection | null>(null)
   const [error, setError] = useState('')
   const [isStarting, setIsStarting] = useState(false)
+  const [detectorInfo, setDetectorInfo] = useState<DetectorInfo | null>(null)
+  const [inferenceMs, setInferenceMs] = useState<number | null>(null)
 
   const stopDetectionLoop = useCallback(() => {
     if (timerRef.current) {
@@ -59,8 +67,11 @@ export function CameraScanner({ onOpenCodeVisualizer, onInventoryChange }: { onO
     detectorRef.current = null
 
     setIsStarting(false)
+    trackerRef.current.reset()
     setDetections([])
     setSelectedDetection(null)
+    setDetectorInfo(null)
+    setInferenceMs(null)
     setAiModelStatus('NOT LOADED')
     setCameraStatus('DISCONNECTED')
     setError('')
@@ -84,7 +95,8 @@ export function CameraScanner({ onOpenCodeVisualizer, onInventoryChange }: { onO
       if (!video || !detector || !streamRef.current) {
         return
       }
-      if (detectingRef.current) {
+      if (detectingRef.current || document.hidden) {
+        // Skip work while a frame is still processing or the tab isn't visible.
         timerRef.current = window.setTimeout(() => void runInference(), 250)
         return
       }
@@ -92,10 +104,14 @@ export function CameraScanner({ onOpenCodeVisualizer, onInventoryChange }: { onO
       detectingRef.current = true
 
       try {
-        const nextDetections = await detector.detect(video)
+        const started = performance.now()
+        const candidates = await detector.detect(video)
+        const elapsed = performance.now() - started
         if (operation === operationRef.current) {
-          setDetections(nextDetections)
-          setSelectedDetection(scoreDetection(nextDetections))
+          const tracked = trackerRef.current.update(candidates)
+          setDetections(tracked)
+          setSelectedDetection(primaryDetection(tracked))
+          setInferenceMs((previous) => Math.round(previous === null ? elapsed : previous * 0.8 + elapsed * 0.2))
         }
       } catch (detectError) {
         if (operation !== operationRef.current) return
@@ -108,7 +124,7 @@ export function CameraScanner({ onOpenCodeVisualizer, onInventoryChange }: { onO
       } finally {
         detectingRef.current = false
         if (operation === operationRef.current && detectorRef.current === detector && streamRef.current) {
-          timerRef.current = window.setTimeout(() => void runInference(), INFERENCE_INTERVAL_MS)
+          timerRef.current = window.setTimeout(() => void runInference(), INFERENCE_GAP_MS)
         }
       }
     }
@@ -165,13 +181,15 @@ export function CameraScanner({ onOpenCodeVisualizer, onInventoryChange }: { onO
 
       const detector: ComponentDetector = new OnnxDetector()
       detectorRef.current = detector
-      await detector.load()
+      const info = await detector.load()
       if (operation !== operationRef.current) {
         detector.dispose()
         if (detectorRef.current === detector) detectorRef.current = null
         return
       }
 
+      setDetectorInfo(info)
+      trackerRef.current.reset()
       setAiModelStatus('READY')
       beginDetectionLoop(operation)
     } catch (startError) {
@@ -218,16 +236,16 @@ export function CameraScanner({ onOpenCodeVisualizer, onInventoryChange }: { onO
         <div>
           <span className="eyebrow">VISION / PATTERN RECOGNITION</span>
           <h1>Component scanner</h1>
-          <p>Local camera inference for ESP8266 NodeMCU and other boards.</p>
+          <p>Local camera inference with a {MODEL_META.classes.length}-class model ({MODEL_META.classes.map((item) => item.label).join(', ')}). Names are shown only when a part is recognised consistently.</p>
         </div>
         <div className="camera-badge-group">
           <span className={`camera-status-badge ${cameraStatus === 'ACTIVE' ? 'camera-status-active' : cameraStatus === 'ERROR' ? 'camera-status-error' : 'camera-status-disconnected'}`}>
             <Camera size={13} /> CAMERA: {cameraStatus}
           </span>
           <span className="camera-status-badge camera-status-model">
-            <ScanLine size={13} /> AI MODEL: YOLO11n ONNX · {aiModelStatus}
+            <ScanLine size={13} /> AI MODEL: {MODEL_META.architecture.toUpperCase()} · {MODEL_META.name} · {aiModelStatus}
           </span>
-          <span className="camera-status-badge camera-status-mode">DETECTION MODE: BOARD DETECTION</span>
+          {detectorInfo && <span className="camera-status-badge camera-status-mode">{BACKEND_LABELS[detectorInfo.backend]}{inferenceMs !== null ? ` · ${inferenceMs} ms/frame` : ''}</span>}
         </div>
       </div>
 
@@ -235,8 +253,8 @@ export function CameraScanner({ onOpenCodeVisualizer, onInventoryChange }: { onO
         <div className="camera-toolbar">
           <div className="camera-header-labels">
             <span className="status-chip">CAMERA: {cameraStatus}</span>
-            <span className="status-chip accent">AI MODEL: YOLO11n ONNX · {aiModelStatus}</span>
-            <span className="status-chip">DETECTION MODE: BOARD DETECTION</span>
+            <span className="status-chip accent">AI MODEL: {MODEL_META.name} · {aiModelStatus}</span>
+            {detectorInfo && <span className="status-chip">{BACKEND_LABELS[detectorInfo.backend]}{inferenceMs !== null ? ` · ${inferenceMs} ms` : ''}</span>}
           </div>
           <div className="camera-actions">
             <button type="button" className="primary-button" onClick={startCamera} disabled={cameraStatus === 'ACTIVE' || isStarting}>
@@ -270,10 +288,10 @@ export function CameraScanner({ onOpenCodeVisualizer, onInventoryChange }: { onO
 
         <div className="camera-footer-row">
           <small>Camera frames are processed locally in your browser.</small>
-          <small>BOARD RESULTS: {detections.length} · DETECTED ≠ PHYSICALLY CONNECTED</small>
+          <small>RECOGNISED: {detections.filter((detection) => detection.state === 'confirmed').length} · SEEN ON CAMERA ≠ PHYSICALLY CONNECTED</small>
         </div>
 
-        <DetectedComponent detection={selectedDetection} />
+        <DetectedComponent detection={selectedDetection} scanning={aiModelStatus === 'READY'} />
       </section>
       <ComponentWorkspace detections={detections} onOpenCodeVisualizer={onOpenCodeVisualizer} onInventoryChange={onInventoryChange} />
     </div>

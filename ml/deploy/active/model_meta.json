@@ -1,0 +1,23 @@
+{
+  "name": "board_v0",
+  "description": "YOLO11n fine-tuned on the Kaggle 'Microcontroller Detection' images (149 images). Detects ESP8266 NodeMCU boards and groups every other development board as other_board.",
+  "architecture": "yolo11n",
+  "imageSize": 640,
+  "source": "ml/models/yolo11n_cpu_seed42_batch8-3/weights/best.onnx",
+  "classes": [
+    { "id": 0, "name": "esp8266_nodemcu", "label": "ESP8266 NodeMCU", "threshold": 0.6 },
+    { "id": 1, "name": "other_board", "label": "Other development board", "threshold": 0.6 }
+  ],
+  "policy": {
+    "candidateFloor": 0.25,
+    "defaultThreshold": 0.6,
+    "nmsIou": 0.45,
+    "minBoxArea": 0.004,
+    "maxBoxArea": 0.9,
+    "confirmWindow": 3,
+    "confirmHits": 2,
+    "maxMisses": 2,
+    "ambiguityMargin": 0.15
+  },
+  "thresholdNote": "Not calibrated: the 30-image validation set is too small to choose per-class thresholds. A conservative 0.6 plus 2-of-3-frame confirmation is used instead. Models trained with ml/component_detection/train.py get thresholds from evaluate.py."
+}
