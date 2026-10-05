@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Bot, Check, Copy, MessageCircle, RotateCcw, Send, X } from 'lucide-react'
 import { answerLocally, BOT_NAME, GREETING } from '../assistant/knowledge'
 import { COMPONENT_LESSONS } from '../data/componentLessons'
@@ -216,13 +217,14 @@ export function ChatAssistant({ pageLabel, parts }: ChatAssistantProps) {
     }
   }
 
-  const status = aiAvailable === null ? 'Connecting…' : aiAvailable ? 'Online' : 'Limited mode'
+  const { t } = useTranslation()
+  const status = aiAvailable === null ? 'Connecting…' : aiAvailable ? t('chat.aiOnline') : 'Limited mode'
 
   return (
     <>
       {!open && (
         <button type="button" className="chat-launcher" onClick={() => setOpen(true)} aria-label={`Chat with ${BOT_NAME}`}>
-          <MessageCircle size={20} /><span>Chat with {BOT_NAME}</span>
+          <MessageCircle size={20} /><span>{t('chat.assistantTitle')}</span>
         </button>
       )}
       {open && (
@@ -251,7 +253,7 @@ export function ChatAssistant({ pageLabel, parts }: ChatAssistantProps) {
               value={input}
               rows={1}
               maxLength={4000}
-              placeholder={`Message ${BOT_NAME}…`}
+              placeholder={t('chat.askPlaceholder')}
               aria-label="Your message"
               onChange={(event) => setInput(event.target.value)}
               onKeyDown={(event) => {
