@@ -4,6 +4,9 @@ dist/
 .vercel/
 .venv/
 **/.venv/
+**/.venv-*/
+ml/datasets/
+ml/runs/
 __pycache__/
 **/__pycache__/
 *.py[cod]
