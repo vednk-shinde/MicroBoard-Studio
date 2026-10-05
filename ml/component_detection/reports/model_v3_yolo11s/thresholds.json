@@ -1,0 +1,603 @@
+{
+  "target_precision": 0.9,
+  "classes": {
+    "Battery_Holder": {
+      "threshold": 0.75,
+      "reaches_target_precision": true,
+      "curve": {
+        "0.5": {
+          "precision": 0.75,
+          "recall": 0.25
+        },
+        "0.55": {
+          "precision": 0.75,
+          "recall": 0.25
+        },
+        "0.6": {
+          "precision": 0.5,
+          "recall": 0.083
+        },
+        "0.65": {
+          "precision": 0.5,
+          "recall": 0.083
+        },
+        "0.7": {
+          "precision": 0.5,
+          "recall": 0.083
+        },
+        "0.75": {
+          "precision": 1.0,
+          "recall": 0.083
+        },
+        "0.8": {
+          "precision": 0.0,
+          "recall": 0.0
+        },
+        "0.85": {
+          "precision": 0.0,
+          "recall": 0.0
+        },
+        "0.9": {
+          "precision": 0.0,
+          "recall": 0.0
+        },
+        "0.95": {
+          "precision": 0.0,
+          "recall": 0.0
+        }
+      }
+    },
+    "Breadboard": {
+      "threshold": 0.8,
+      "reaches_target_precision": true,
+      "curve": {
+        "0.5": {
+          "precision": 0.889,
+          "recall": 1.0
+        },
+        "0.55": {
+          "precision": 0.889,
+          "recall": 1.0
+        },
+        "0.6": {
+          "precision": 0.889,
+          "recall": 1.0
+        },
+        "0.65": {
+          "precision": 0.875,
+          "recall": 0.875
+        },
+        "0.7": {
+          "precision": 0.875,
+          "recall": 0.875
+        },
+        "0.75": {
+          "precision": 0.875,
+          "recall": 0.875
+        },
+        "0.8": {
+          "precision": 1.0,
+          "recall": 0.75
+        },
+        "0.85": {
+          "precision": 1.0,
+          "recall": 0.625
+        },
+        "0.9": {
+          "precision": 1.0,
+          "recall": 0.125
+        },
+        "0.95": {
+          "precision": 0.0,
+          "recall": 0.0
+        }
+      }
+    },
+    "Capacitor": {
+      "threshold": 0.7,
+      "reaches_target_precision": true,
+      "curve": {
+        "0.5": {
+          "precision": 0.5,
+          "recall": 0.143
+        },
+        "0.55": {
+          "precision": 0.5,
+          "recall": 0.143
+        },
+        "0.6": {
+          "precision": 0.5,
+          "recall": 0.143
+        },
+        "0.65": {
+          "precision": 0.5,
+          "recall": 0.143
+        },
+        "0.7": {
+          "precision": 1.0,
+          "recall": 0.143
+        },
+        "0.75": {
+          "precision": 1.0,
+          "recall": 0.143
+        },
+        "0.8": {
+          "precision": 1.0,
+          "recall": 0.143
+        },
+        "0.85": {
+          "precision": 1.0,
+          "recall": 0.143
+        },
+        "0.9": {
+          "precision": 0.0,
+          "recall": 0.0
+        },
+        "0.95": {
+          "precision": 0.0,
+          "recall": 0.0
+        }
+      }
+    },
+    "Connector": {
+      "threshold": 0.8,
+      "reaches_target_precision": true,
+      "curve": {
+        "0.5": {
+          "precision": 0.667,
+          "recall": 0.4
+        },
+        "0.55": {
+          "precision": 0.667,
+          "recall": 0.4
+        },
+        "0.6": {
+          "precision": 0.667,
+          "recall": 0.4
+        },
+        "0.65": {
+          "precision": 0.667,
+          "recall": 0.4
+        },
+        "0.7": {
+          "precision": 0.667,
+          "recall": 0.4
+        },
+        "0.75": {
+          "precision": 0.667,
+          "recall": 0.4
+        },
+        "0.8": {
+          "precision": 1.0,
+          "recall": 0.4
+        },
+        "0.85": {
+          "precision": 1.0,
+          "recall": 0.4
+        },
+        "0.9": {
+          "precision": 0.0,
+          "recall": 0.0
+        },
+        "0.95": {
+          "precision": 0.0,
+          "recall": 0.0
+        }
+      }
+    },
+    "Crystal_Oscillator": {
+      "threshold": 0.5,
+      "reaches_target_precision": true,
+      "curve": {
+        "0.5": {
+          "precision": 1.0,
+          "recall": 0.6
+        },
+        "0.55": {
+          "precision": 1.0,
+          "recall": 0.6
+        },
+        "0.6": {
+          "precision": 1.0,
+          "recall": 0.6
+        },
+        "0.65": {
+          "precision": 1.0,
+          "recall": 0.6
+        },
+        "0.7": {
+          "precision": 1.0,
+          "recall": 0.6
+        },
+        "0.75": {
+          "precision": 1.0,
+          "recall": 0.6
+        },
+        "0.8": {
+          "precision": 1.0,
+          "recall": 0.4
+        },
+        "0.85": {
+          "precision": 1.0,
+          "recall": 0.2
+        },
+        "0.9": {
+          "precision": 0.0,
+          "recall": 0.0
+        },
+        "0.95": {
+          "precision": 0.0,
+          "recall": 0.0
+        }
+      }
+    },
+    "Diode": {
+      "threshold": 0.55,
+      "reaches_target_precision": true,
+      "curve": {
+        "0.5": {
+          "precision": 0.75,
+          "recall": 0.6
+        },
+        "0.55": {
+          "precision": 1.0,
+          "recall": 0.6
+        },
+        "0.6": {
+          "precision": 1.0,
+          "recall": 0.6
+        },
+        "0.65": {
+          "precision": 1.0,
+          "recall": 0.6
+        },
+        "0.7": {
+          "precision": 1.0,
+          "recall": 0.6
+        },
+        "0.75": {
+          "precision": 1.0,
+          "recall": 0.4
+        },
+        "0.8": {
+          "precision": 1.0,
+          "recall": 0.2
+        },
+        "0.85": {
+          "precision": 0.0,
+          "recall": 0.0
+        },
+        "0.9": {
+          "precision": 0.0,
+          "recall": 0.0
+        },
+        "0.95": {
+          "precision": 0.0,
+          "recall": 0.0
+        }
+      }
+    },
+    "Heat_Sink": {
+      "threshold": 0.8,
+      "reaches_target_precision": true,
+      "curve": {
+        "0.5": {
+          "precision": 0.667,
+          "recall": 0.6
+        },
+        "0.55": {
+          "precision": 0.75,
+          "recall": 0.6
+        },
+        "0.6": {
+          "precision": 0.75,
+          "recall": 0.6
+        },
+        "0.65": {
+          "precision": 0.75,
+          "recall": 0.6
+        },
+        "0.7": {
+          "precision": 0.857,
+          "recall": 0.6
+        },
+        "0.75": {
+          "precision": 0.857,
+          "recall": 0.6
+        },
+        "0.8": {
+          "precision": 1.0,
+          "recall": 0.6
+        },
+        "0.85": {
+          "precision": 1.0,
+          "recall": 0.6
+        },
+        "0.9": {
+          "precision": 1.0,
+          "recall": 0.5
+        },
+        "0.95": {
+          "precision": 0.0,
+          "recall": 0.0
+        }
+      }
+    },
+    "Inductor": {
+      "threshold": 0.5,
+      "reaches_target_precision": true,
+      "curve": {
+        "0.5": {
+          "precision": 1.0,
+          "recall": 0.25
+        },
+        "0.55": {
+          "precision": 1.0,
+          "recall": 0.25
+        },
+        "0.6": {
+          "precision": 1.0,
+          "recall": 0.25
+        },
+        "0.65": {
+          "precision": 1.0,
+          "recall": 0.25
+        },
+        "0.7": {
+          "precision": 1.0,
+          "recall": 0.25
+        },
+        "0.75": {
+          "precision": 1.0,
+          "recall": 0.25
+        },
+        "0.8": {
+          "precision": 1.0,
+          "recall": 0.25
+        },
+        "0.85": {
+          "precision": 0.0,
+          "recall": 0.0
+        },
+        "0.9": {
+          "precision": 0.0,
+          "recall": 0.0
+        },
+        "0.95": {
+          "precision": 0.0,
+          "recall": 0.0
+        }
+      }
+    },
+    "Jumper_Wires": {
+      "threshold": 0.7,
+      "reaches_target_precision": true,
+      "curve": {
+        "0.5": {
+          "precision": 0.875,
+          "recall": 0.778
+        },
+        "0.55": {
+          "precision": 0.875,
+          "recall": 0.778
+        },
+        "0.6": {
+          "precision": 0.875,
+          "recall": 0.778
+        },
+        "0.65": {
+          "precision": 0.875,
+          "recall": 0.778
+        },
+        "0.7": {
+          "precision": 1.0,
+          "recall": 0.778
+        },
+        "0.75": {
+          "precision": 1.0,
+          "recall": 0.556
+        },
+        "0.8": {
+          "precision": 1.0,
+          "recall": 0.333
+        },
+        "0.85": {
+          "precision": 0.0,
+          "recall": 0.0
+        },
+        "0.9": {
+          "precision": 0.0,
+          "recall": 0.0
+        },
+        "0.95": {
+          "precision": 0.0,
+          "recall": 0.0
+        }
+      }
+    },
+    "Microcontroller_Board": {
+      "threshold": 0.8,
+      "reaches_target_precision": true,
+      "curve": {
+        "0.5": {
+          "precision": 0.761,
+          "recall": 0.833
+        },
+        "0.55": {
+          "precision": 0.773,
+          "recall": 0.81
+        },
+        "0.6": {
+          "precision": 0.791,
+          "recall": 0.81
+        },
+        "0.65": {
+          "precision": 0.8,
+          "recall": 0.762
+        },
+        "0.7": {
+          "precision": 0.8,
+          "recall": 0.762
+        },
+        "0.75": {
+          "precision": 0.889,
+          "recall": 0.762
+        },
+        "0.8": {
+          "precision": 0.914,
+          "recall": 0.762
+        },
+        "0.85": {
+          "precision": 0.897,
+          "recall": 0.619
+        },
+        "0.9": {
+          "precision": 0.714,
+          "recall": 0.119
+        },
+        "0.95": {
+          "precision": 0.0,
+          "recall": 0.0
+        }
+      }
+    },
+    "Potentiometer": {
+      "threshold": 0.8,
+      "reaches_target_precision": true,
+      "curve": {
+        "0.5": {
+          "precision": 0.429,
+          "recall": 0.5
+        },
+        "0.55": {
+          "precision": 0.429,
+          "recall": 0.5
+        },
+        "0.6": {
+          "precision": 0.5,
+          "recall": 0.5
+        },
+        "0.65": {
+          "precision": 0.75,
+          "recall": 0.5
+        },
+        "0.7": {
+          "precision": 0.75,
+          "recall": 0.5
+        },
+        "0.75": {
+          "precision": 0.75,
+          "recall": 0.5
+        },
+        "0.8": {
+          "precision": 1.0,
+          "recall": 0.5
+        },
+        "0.85": {
+          "precision": 1.0,
+          "recall": 0.5
+        },
+        "0.9": {
+          "precision": 1.0,
+          "recall": 0.167
+        },
+        "0.95": {
+          "precision": 0.0,
+          "recall": 0.0
+        }
+      }
+    },
+    "Power_Supply_Module": {
+      "threshold": 0.7,
+      "reaches_target_precision": true,
+      "curve": {
+        "0.5": {
+          "precision": 0.6,
+          "recall": 0.429
+        },
+        "0.55": {
+          "precision": 0.5,
+          "recall": 0.286
+        },
+        "0.6": {
+          "precision": 0.667,
+          "recall": 0.286
+        },
+        "0.65": {
+          "precision": 0.667,
+          "recall": 0.286
+        },
+        "0.7": {
+          "precision": 1.0,
+          "recall": 0.286
+        },
+        "0.75": {
+          "precision": 1.0,
+          "recall": 0.286
+        },
+        "0.8": {
+          "precision": 0.0,
+          "recall": 0.0
+        },
+        "0.85": {
+          "precision": 0.0,
+          "recall": 0.0
+        },
+        "0.9": {
+          "precision": 0.0,
+          "recall": 0.0
+        },
+        "0.95": {
+          "precision": 0.0,
+          "recall": 0.0
+        }
+      }
+    },
+    "Resistor": {
+      "threshold": 0.75,
+      "reaches_target_precision": true,
+      "curve": {
+        "0.5": {
+          "precision": 0.6,
+          "recall": 0.429
+        },
+        "0.55": {
+          "precision": 0.6,
+          "recall": 0.429
+        },
+        "0.6": {
+          "precision": 0.5,
+          "recall": 0.286
+        },
+        "0.65": {
+          "precision": 0.5,
+          "recall": 0.143
+        },
+        "0.7": {
+          "precision": 0.5,
+          "recall": 0.143
+        },
+        "0.75": {
+          "precision": 1.0,
+          "recall": 0.143
+        },
+        "0.8": {
+          "precision": 1.0,
+          "recall": 0.143
+        },
+        "0.85": {
+          "precision": 1.0,
+          "recall": 0.143
+        },
+        "0.9": {
+          "precision": 0.0,
+          "recall": 0.0
+        },
+        "0.95": {
+          "precision": 0.0,
+          "recall": 0.0
+        }
+      }
+    }
+  }
+}

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { COMPONENT_PROFILES, type ComponentProfileId } from '../data/componentCatalog'
+import { visionComponentInfo } from '../data/visionComponents'
 import type { Detection } from '../ml/detector'
 import { BoardDesigner } from './BoardDesigner'
 import { ComponentInventory, type ResistorValues } from './ComponentInventory'
@@ -22,7 +23,14 @@ export function ComponentWorkspace({ detections, onOpenCodeVisualizer }: {
   const [resistorValues, setResistorValues] = useState<ResistorValues>({})
   const [nextManualId, setNextManualId] = useState(1)
 
-  const cameraDetections = detections.filter((item) => !removedIds.includes(item.id))
+  // Camera classes come from the detection model; translate them to inventory catalog parts.
+  // Recognised parts without a catalog entry are shown in the camera results but can't be added here.
+  const cameraDetections = detections.flatMap((item) => {
+    const profileId = visionComponentInfo(item.className).catalogProfileId
+    if (item.state !== 'confirmed' || !profileId || removedIds.includes(item.id)) return []
+    const profile = COMPONENT_PROFILES[profileId]
+    return [{ ...item, classId: profile.classId, className: profile.id, label: profile.id }]
+  })
   const editableCameraItems = cameraDetections.map((item) => {
     const correction = corrections[item.id]
     const profile = correction ? COMPONENT_PROFILES[correction.className] : undefined
@@ -87,7 +95,7 @@ export function ComponentWorkspace({ detections, onOpenCodeVisualizer }: {
 
   return (
     <div className="component-workspace">
-      <DetectedComponentsPanel detections={cameraDetections} selectedId={selectedId} onSelect={(item) => setSelectedId(item.id)} />
+      <DetectedComponentsPanel detections={detections} selectedId={selectedId} onSelect={(item) => setSelectedId(item.id)} />
       <ComponentInventory
         items={inventory}
         selectedId={selectedId}

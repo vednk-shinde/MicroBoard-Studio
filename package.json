@@ -9,7 +9,8 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "assistant:prompt": "tsx scripts/build-assistant-prompt.ts",
-    "assistant:eval": "tsx scripts/assistant-eval.ts"
+    "assistant:eval": "tsx scripts/assistant-eval.ts",
+    "detector:check": "tsx scripts/detection-policy-check.ts"
   },
   "dependencies": {
     "lucide-react": "^1.49.0",

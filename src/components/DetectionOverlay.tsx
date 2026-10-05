@@ -1,4 +1,5 @@
 import type { Detection } from '../ml/detector'
+import './DetectionOverlay.css'
 
 type DetectionOverlayProps = {
   detections: Detection[]
@@ -35,18 +36,21 @@ export function DetectionOverlay({ detections, video }: DetectionOverlayProps) {
           return (
         <div
           key={detection.id}
-          className="detection-box"
+          className={`detection-box ${detection.state === 'tentative' ? 'is-tentative' : detection.state === 'ambiguous' ? 'is-ambiguous' : ''}`}
           style={{
             left: toPercent(displayWidth ? left / displayWidth : detection.bbox.x),
             top: toPercent(displayHeight ? top / displayHeight : detection.bbox.y),
             width: toPercent(displayWidth ? width / displayWidth : detection.bbox.width),
             height: toPercent(displayHeight ? height / displayHeight : detection.bbox.height),
           }}
-          aria-label={`${detection.label} detected with ${Math.round(detection.confidence * 100)} percent confidence`}
+          aria-label={detection.state === 'tentative' ? 'Unrecognised object, still checking' : `${detection.label} detected with ${Math.round(detection.confidence * 100)} percent confidence`}
         >
           <div className="detection-label">
-            <span>{detection.label.replaceAll('_', ' ')}</span>
-            <strong>{Math.round(detection.confidence * 100)}%</strong>
+            {detection.state === 'tentative'
+              ? <span>Checking…</span>
+              : detection.state === 'ambiguous' && detection.alternative
+                ? <span>{detection.label} or {detection.alternative.label}?</span>
+                : <><span>{detection.label}</span><strong>{Math.round(detection.confidence * 100)}%</strong></>}
           </div>
         </div>
           )

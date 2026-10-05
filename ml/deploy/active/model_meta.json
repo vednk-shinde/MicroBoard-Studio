@@ -1,0 +1,114 @@
+{
+  "name": "components_v1",
+  "description": "YOLO11n fine-tuned on 13 electronic component classes. Test mAP50 0.549, precision 0.588, recall 0.543.",
+  "architecture": "yolo11n",
+  "imageSize": 640,
+  "source": "ml/runs/component_detection/v1/weights/best.pt",
+  "classes": [
+    {
+      "id": 0,
+      "name": "Battery_Holder",
+      "label": "Battery holder",
+      "threshold": 0.5
+    },
+    {
+      "id": 1,
+      "name": "Breadboard",
+      "label": "Breadboard",
+      "threshold": 0.5
+    },
+    {
+      "id": 2,
+      "name": "Capacitor",
+      "label": "Capacitor",
+      "threshold": 0.9,
+      "unreliable": true
+    },
+    {
+      "id": 3,
+      "name": "Connector",
+      "label": "Connector",
+      "threshold": 0.5
+    },
+    {
+      "id": 4,
+      "name": "Crystal_Oscillator",
+      "label": "Crystal oscillator",
+      "threshold": 0.65
+    },
+    {
+      "id": 5,
+      "name": "Diode",
+      "label": "Diode",
+      "threshold": 0.7
+    },
+    {
+      "id": 6,
+      "name": "Heat_Sink",
+      "label": "Heat sink",
+      "threshold": 0.5
+    },
+    {
+      "id": 7,
+      "name": "Inductor",
+      "label": "Inductor",
+      "threshold": 0.5
+    },
+    {
+      "id": 8,
+      "name": "Jumper_Wires",
+      "label": "Jumper wires",
+      "threshold": 0.9,
+      "unreliable": true
+    },
+    {
+      "id": 9,
+      "name": "Microcontroller_Board",
+      "label": "Microcontroller board",
+      "threshold": 0.75
+    },
+    {
+      "id": 10,
+      "name": "Potentiometer",
+      "label": "Potentiometer",
+      "threshold": 0.8
+    },
+    {
+      "id": 11,
+      "name": "Power_Supply_Module",
+      "label": "Power supply module",
+      "threshold": 0.5
+    },
+    {
+      "id": 12,
+      "name": "Resistor",
+      "label": "Resistor",
+      "threshold": 0.85
+    }
+  ],
+  "policy": {
+    "candidateFloor": 0.25,
+    "defaultThreshold": 0.6,
+    "nmsIou": 0.45,
+    "minBoxArea": 0.004,
+    "maxBoxArea": 0.9,
+    "confirmWindow": 3,
+    "confirmHits": 2,
+    "maxMisses": 2,
+    "ambiguityMargin": 0.15
+  },
+  "thresholdNote": "Per-class thresholds chosen on the validation split as the lowest confidence reaching 90% precision; classes marked unreliable never reached it and use 0.9.",
+  "evaluation": {
+    "test": {
+      "precision": 0.588,
+      "recall": 0.543,
+      "mAP50": 0.549,
+      "mAP50-95": 0.401
+    },
+    "unreliable_classes": [
+      "Capacitor",
+      "Jumper_Wires"
+    ],
+    "background_images_with_false_detection": "3/47"
+  }
+}
