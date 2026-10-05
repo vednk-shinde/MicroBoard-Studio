@@ -1204,3 +1204,141 @@
     font-size: 9px;
   }
 }
+/* Compiled-run playback: operation timeline, live pin state, serial activity */
+
+.execution-controls .secondary-button.icon-only {
+  padding-inline: 9px;
+}
+
+.execution-controls button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.execution-timeline-wrap {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.execution-timeline-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--muted);
+  font: 0.58rem var(--mono);
+  letter-spacing: 0.12em;
+}
+
+.execution-timeline-meta strong {
+  color: var(--accent-light);
+  font-weight: 500;
+}
+
+.execution-timeline {
+  display: flex;
+  gap: 8px;
+  padding: 2px 2px 8px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.execution-timeline-item {
+  display: grid;
+  flex: none;
+  gap: 4px;
+  min-width: 150px;
+  padding: 9px 11px;
+  border: 1px solid rgba(132, 154, 161, 0.14);
+  border-radius: 11px;
+  background: rgba(15, 21, 23, 0.78);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.16s ease, background 0.16s ease;
+}
+
+.execution-timeline-item span {
+  color: var(--dim);
+  font: 0.52rem var(--mono);
+  letter-spacing: 0.1em;
+}
+
+.execution-timeline-item strong {
+  font: 500 0.7rem var(--mono);
+  white-space: nowrap;
+}
+
+.execution-timeline-item:hover {
+  border-color: rgba(97, 217, 221, 0.35);
+}
+
+.execution-timeline-item.is-done {
+  opacity: 0.72;
+}
+
+.execution-timeline-item.is-active {
+  border-color: rgba(97, 217, 221, 0.7);
+  background: rgba(97, 217, 221, 0.12);
+  box-shadow: 0 0 14px rgba(97, 217, 221, 0.14);
+  opacity: 1;
+}
+
+.execution-timeline-item.is-active span {
+  color: var(--cyan);
+}
+
+.execution-timeline-item:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
+
+.execution-pcb-svg .pcb-header-pin.is-high circle,
+.execution-pcb-svg .pcb-lower-pin.is-high circle {
+  fill: #ffd27a;
+  stroke: #ffe3a3;
+  filter: drop-shadow(0 0 4px rgba(255, 210, 122, 0.85));
+}
+
+.execution-pcb-svg .pcb-lower-pin.is-highlighted circle {
+  fill: #dcfff0;
+  stroke: #64eee0;
+  filter: drop-shadow(0 0 5px rgba(97, 217, 221, 0.9));
+}
+
+.execution-pcb-svg .pcb-lower-pin.is-highlighted text {
+  fill: #a4fff0;
+  font-weight: 700;
+}
+
+.execution-pcb-svg .pcb-small-parts .pcb-tx-led.is-on {
+  fill: #ffcf6e;
+  filter: drop-shadow(0 0 6px #ffcf6e);
+}
+
+.execution-code-number {
+  display: inline-block;
+  width: 2.2em;
+  margin-right: 10px;
+  color: var(--dim);
+  font-style: normal;
+  text-align: right;
+  user-select: none;
+}
+
+.execution-code {
+  max-height: 340px;
+  overflow-y: auto;
+}
+
+.register-bits-label {
+  display: block;
+  margin-top: 12px;
+  color: var(--muted);
+  font: 0.55rem var(--mono);
+  letter-spacing: 0.12em;
+}
+
+.register-bits-label + .register-bits {
+  margin-top: 6px;
+}
