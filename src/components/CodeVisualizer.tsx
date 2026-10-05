@@ -1,348 +1,118 @@
-import { useMemo, useRef, useState } from 'react'
-import { AlertTriangle, ArrowRight, BookOpen, CircleHelp, CircleX, Hammer, RotateCcw, Terminal } from 'lucide-react'
-import { type PinLevel, type PinMode } from '../data/pins'
-import { compileAndRun, SIMULATOR_LIMITS, type CompileResult, type Diagnostic } from '../sim/arduinoSim'
+import { useEffect, useRef, useState } from 'react'
+import { ArrowDown, Check, CircleHelp, Play, RotateCcw, Terminal } from 'lucide-react'
+import { getPinByArduinoNumber, type PinLevel, type PinMode } from '../data/pins'
 import { ArduinoExecutionPath } from './ArduinoExecutionPath'
-import { COMPONENT_LESSONS } from '../data/componentLessons'
-import { detectFromSketch, type ProjectComponent } from '../sim/componentDetection'
-import './CodeVisualizer.css'
 
 interface CodeVisualizerProps {
   initialCode?: string
   onSimulationChange: (pinId: string, mode: PinMode, level: PinLevel) => void
   onSelectPin: (pinId: string) => void
   reducedMotion: boolean
-  onComponentsDetected?: (parts: ProjectComponent[]) => void
-  onOpenLearnMode?: () => void
 }
 
-const examples = [
-  {
-    id: 'blink',
-    label: 'Blink · built-in LED',
-    code: `// Blink the built-in LED on D13
-const int ledPin = LED_BUILTIN;
+const starterCode = 'pinMode(13, OUTPUT);\ndigitalWrite(13, HIGH);'
 
-void setup() {
-  pinMode(ledPin, OUTPUT);
-}
+export function CodeVisualizer({ initialCode, onSimulationChange, onSelectPin, reducedMotion }: CodeVisualizerProps) {
+  const [code, setCode] = useState(initialCode ?? starterCode)
+  const [flow, setFlow] = useState<string[]>([])
+  const [activeStep, setActiveStep] = useState(-1)
+  const [message, setMessage] = useState('')
+  const [running, setRunning] = useState(false)
+  const timer = useRef<number | null>(null)
 
-void loop() {
-  digitalWrite(ledPin, HIGH);
-  delay(1000);
-  digitalWrite(ledPin, LOW);
-  delay(1000);
-}`,
-  },
-  {
-    id: 'fade',
-    label: 'Fade · PWM on D9',
-    code: `// Fade an LED on D9 with PWM (Timer1)
-int brightness = 0;
-int fadeAmount = 85;
+  useEffect(() => () => { if (timer.current !== null) window.clearInterval(timer.current) }, [])
 
-void setup() {
-  pinMode(9, OUTPUT);
-}
+  function visualize() {
+    if (timer.current !== null) window.clearInterval(timer.current)
+    const modeMatch = code.match(/pinMode\s*\(\s*(\d+)\s*,\s*(OUTPUT|INPUT_PULLUP|INPUT)\s*\)/i)
+    const writeMatch = code.match(/digitalWrite\s*\(\s*(\d+)\s*,\s*(HIGH|LOW)\s*\)/i)
+    const targetNumber = Number(writeMatch?.[1] ?? modeMatch?.[1])
+    const pin = getPinByArduinoNumber(targetNumber)
 
-void loop() {
-  analogWrite(9, brightness);
-  brightness = brightness + fadeAmount;
-  if (brightness <= 0 || brightness >= 255) {
-    fadeAmount = -fadeAmount;
-  }
-  delay(30);
-}`,
-  },
-  {
-    id: 'button',
-    label: 'Button · pull-up + Serial',
-    code: `// Read a button on D2 (to GND) and mirror it on the LED
-#define BUTTON_PIN 2
-#define LED_PIN 13
+    if (!pin || (!modeMatch && !writeMatch)) {
+      setMessage('Add a supported pinMode() or digitalWrite() command for digital pin 0–13.')
+      setFlow([])
+      setActiveStep(-1)
+      return
+    }
+    if (modeMatch && writeMatch && modeMatch[1] !== writeMatch[1]) {
+      setMessage('Use the same Arduino pin number in pinMode() and digitalWrite().')
+      setFlow([])
+      setActiveStep(-1)
+      return
+    }
 
-void setup() {
-  pinMode(BUTTON_PIN, INPUT_PULLUP);
-  pinMode(LED_PIN, OUTPUT);
-  Serial.begin(9600);
-}
+    const mode = (modeMatch?.[2]?.toUpperCase() ?? 'OUTPUT') as PinMode
+    if (writeMatch && mode !== 'OUTPUT') {
+      setMessage('digitalWrite() needs OUTPUT mode in this simulation. Change pinMode() to OUTPUT.')
+      setFlow([])
+      setActiveStep(-1)
+      return
+    }
+    const level = (writeMatch?.[2]?.toUpperCase() ?? 'LOW') as PinLevel
+    const stages = [
+      modeMatch ? `pinMode(${targetNumber}, ${mode})` : `digitalWrite(${targetNumber}, ${level})`,
+      `Arduino ${pin.id}`,
+      `ATmega328P ${pin.mcuPin}`,
+      `DDR${pin.port} · bit ${pin.bit} → ${mode}`,
+      ...(writeMatch ? [`PORT${pin.port} · bit ${pin.bit} → ${level}`, `${pin.mcuPin} = ${level}`, `${pin.id} = ${level}`] : []),
+      ...(pin.id === 'D13' && level === 'HIGH' && mode === 'OUTPUT' ? ['Built-in LED → ON'] : []),
+    ]
 
-void loop() {
-  int pressed = digitalRead(BUTTON_PIN) == LOW;
-  digitalWrite(LED_PIN, pressed ? HIGH : LOW);
-  Serial.print("Button pressed: ");
-  Serial.println(pressed);
-  delay(200);
-}`,
-  },
-  {
-    id: 'sensor',
-    label: 'Sensor · analogRead → PWM',
-    code: `// Read a potentiometer on A0 and set LED brightness on D5
-void setup() {
-  Serial.begin(115200);
-}
+    onSelectPin(pin.id)
+    setMessage('')
+    setFlow(stages)
+    setActiveStep(reducedMotion ? stages.length - 1 : 0)
+    setRunning(!reducedMotion)
+    if (reducedMotion) {
+      onSimulationChange(pin.id, mode, level)
+      return
+    }
 
-void loop() {
-  int raw = analogRead(A0);
-  int level = map(raw, 0, 1023, 0, 255);
-  analogWrite(5, level);
-  Serial.print("A0 = ");
-  Serial.print(raw);
-  Serial.print("  ->  PWM ");
-  Serial.println(level);
-  delay(100);
-}`,
-  },
-  {
-    id: 'chaser',
-    label: 'LED chaser · arrays + for',
-    code: `// Light LEDs on D2–D5 one after another
-int leds[] = {2, 3, 4, 5};
-const int count = sizeof(leds) / sizeof(leds[0]);
-
-void setup() {
-  for (int i = 0; i < count; i++) {
-    pinMode(leds[i], OUTPUT);
-  }
-}
-
-void loop() {
-  for (int i = 0; i < count; i++) {
-    digitalWrite(leds[i], HIGH);
-    delay(150);
-    digitalWrite(leds[i], LOW);
-  }
-}`,
-  },
-  {
-    id: 'radar',
-    label: 'Radar · servo + ultrasonic',
-    code: `// Arduino radar: a servo sweeps an HC-SR04 and a buzzer warns about close objects
-#include <Servo.h>
-
-const int trigPin = 10;
-const int echoPin = 11;
-const int buzzerPin = 8;
-Servo radarServo;
-
-int measureDistance() {
-  digitalWrite(trigPin, LOW);
-  delayMicroseconds(2);
-  digitalWrite(trigPin, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(trigPin, LOW);
-  long duration = pulseIn(echoPin, HIGH, 30000);
-  return duration / 58;
-}
-
-void setup() {
-  pinMode(trigPin, OUTPUT);
-  pinMode(echoPin, INPUT);
-  pinMode(buzzerPin, OUTPUT);
-  radarServo.attach(12);
-  Serial.begin(9600);
-}
-
-void loop() {
-  for (int angle = 15; angle <= 165; angle += 15) {
-    radarServo.write(angle);
-    delay(30);
-    int distance = measureDistance();
-    if (distance > 0 && distance < 25) tone(buzzerPin, 1000);
-    else noTone(buzzerPin);
-    Serial.print(angle);
-    Serial.print(" deg: ");
-    Serial.print(distance);
-    Serial.println(" cm");
-  }
-}`,
-  },
-  {
-    id: 'registers',
-    label: 'Blink · direct registers',
-    code: `// The same blink, writing the AVR registers directly
-void setup() {
-  DDRB |= (1 << PB5);    // PB5 (D13) as output
-}
-
-void loop() {
-  PORTB |= (1 << PB5);   // D13 HIGH
-  delay(500);
-  PORTB &= ~(1 << PB5);  // D13 LOW
-  delay(500);
-}`,
-  },
-]
-
-const DRAFT_STORAGE_KEY = 'microboard.sketch.v1'
-
-function loadDraft(): string | null {
-  try {
-    return localStorage.getItem(DRAFT_STORAGE_KEY)
-  } catch {
-    return null
-  }
-}
-
-function saveDraft(code: string) {
-  try {
-    localStorage.setItem(DRAFT_STORAGE_KEY, code)
-  } catch {
-    // Storage unavailable: the sketch then only lasts while this page is open.
-  }
-}
-
-function offsetOfLine(code: string, line: number): [number, number] {
-  const lines = code.split('\n')
-  const start = lines.slice(0, line - 1).reduce((sum, text) => sum + text.length + 1, 0)
-  return [start, start + (lines[line - 1]?.length ?? 0)]
-}
-
-export function CodeVisualizer({ initialCode, onSimulationChange, onSelectPin, reducedMotion, onComponentsDetected, onOpenLearnMode }: CodeVisualizerProps) {
-  const [startCode] = useState(() => initialCode ?? loadDraft() ?? examples[0].code)
-  const [code, setCodeState] = useState(startCode)
-  const [compiledCode, setCompiledCode] = useState(startCode)
-  const [result, setResult] = useState<CompileResult>(() => compileAndRun(startCode))
-  const [runKey, setRunKey] = useState(0)
-  const [detected, setDetected] = useState<ProjectComponent[]>([])
-  const textareaRef = useRef<HTMLTextAreaElement | null>(null)
-  const gutterRef = useRef<HTMLPreElement | null>(null)
-  const traceRef = useRef<HTMLDivElement | null>(null)
-
-  const run = result.ok ? result : null
-  const dirty = code !== compiledCode
-  const errorLines = useMemo(() => new Set(result.ok ? (result.runtimeError ? [result.runtimeError.line] : []) : result.errors.map((error) => error.line)), [result])
-  const lineCount = code.split('\n').length
-
-  // Keep the sketch being edited, so switching pages (e.g. to Learn Mode) doesn't lose it.
-  function setCode(next: string) {
-    setCodeState(next)
-    saveDraft(next)
+    let nextStep = 1
+    timer.current = window.setInterval(() => {
+      if (nextStep >= stages.length) {
+        if (timer.current !== null) window.clearInterval(timer.current)
+        timer.current = null
+        setRunning(false)
+        onSimulationChange(pin.id, mode, level)
+        return
+      }
+      setActiveStep(nextStep)
+      nextStep += 1
+    }, 460)
   }
 
-  function compile() {
-    const next = compileAndRun(code)
-    setResult(next)
-    setCompiledCode(code)
-    setRunKey((key) => key + 1)
-    const parts = detectFromSketch(code, next.ok ? next : null)
-    setDetected(parts)
-    onComponentsDetected?.(parts)
-    // On success, bring the animated execution path into view; on errors, stay with the messages in the editor.
-    if (next.ok) requestAnimationFrame(() => traceRef.current?.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'start' }))
+  function reset() {
+    if (timer.current !== null) window.clearInterval(timer.current)
+    timer.current = null
+    setRunning(false)
+    setActiveStep(-1)
+    setFlow([])
+    setMessage('')
   }
-
-  function loadExample(id: string) {
-    const example = examples.find((candidate) => candidate.id === id)
-    if (example) setCode(example.code)
-  }
-
-  function focusLine(line: number) {
-    const textarea = textareaRef.current
-    if (!textarea) return
-    const [start, end] = offsetOfLine(code, line)
-    textarea.focus()
-    textarea.setSelectionRange(start, end)
-    const lineHeight = parseFloat(getComputedStyle(textarea).lineHeight) || 20
-    textarea.scrollTop = Math.max(0, (line - 3) * lineHeight)
-  }
-
-  const diagnostics: { level: 'error' | 'warning'; item: Diagnostic }[] = result.ok
-    ? [...(result.runtimeError ? [{ level: 'error' as const, item: result.runtimeError }] : []), ...result.warnings.map((item) => ({ level: 'warning' as const, item }))]
-    : [...result.errors.map((item) => ({ level: 'error' as const, item })), ...result.warnings.map((item) => ({ level: 'warning' as const, item }))]
-
-  const buildStatus = !result.ok ? `Compilation failed · ${result.errors.length} error${result.errors.length === 1 ? '' : 's'}` : result.runtimeError ? 'Compiled · stopped by a runtime error' : 'Compiled and ran successfully'
-  const emptyMessage = result.ok ? 'Press Compile & Run to simulate your sketch.' : 'Fix the compile errors in the sketch below to see its execution path.'
 
   return (
     <div className="page-stack">
       <div className="page-title-row">
-        <div><span className="eyebrow">EXECUTION TRACE / CODE VISUALIZER</span><h1>Code → hardware</h1><p>Write any Arduino sketch, compile it, and watch it run on a simulated ATmega328P, down to the register bits.</p></div>
+        <div><span className="eyebrow">EXECUTION TRACE / CODE VISUALIZER</span><h1>Code → hardware</h1><p>Step through supported Arduino calls and see their simulated register effects.</p></div>
         <div className="simulation-tag large"><span /> SIMULATION</div>
       </div>
-      <div ref={traceRef} className="code-visualizer-trace">
-        <ArduinoExecutionPath key={runKey} run={run} source={compiledCode} autoplay={runKey > 0 && Boolean(run)} emptyMessage={emptyMessage} onSimulationChange={onSimulationChange} onSelectPin={onSelectPin} reducedMotion={reducedMotion} />
-      </div>
+      <ArduinoExecutionPath key={code} code={code} onSimulationChange={onSimulationChange} onSelectPin={onSelectPin} reducedMotion={reducedMotion} />
       <div className="code-layout">
         <section className="panel code-editor-panel">
-          <div className="panel-heading code-panel-heading"><div><span className="eyebrow">SKETCH INPUT</span><h2><Terminal size={17} /> Arduino sketch</h2></div><button type="button" className="icon-button" title="Restore the Blink example" aria-label="Restore the Blink example" onClick={() => setCode(examples[0].code)}><RotateCcw size={16} /></button></div>
-          <div className="editor-toolbar">
-            <span className="editor-language"><span /> C++ / ARDUINO</span>
-            <label className="editor-example-picker">
-              <span className="sr-only">Load an example sketch</span>
-              <select value="" onChange={(event) => loadExample(event.target.value)}>
-                <option value="" disabled>Load example…</option>
-                {examples.map((example) => <option key={example.id} value={example.id}>{example.label}</option>)}
-              </select>
-            </label>
-          </div>
-          <div className="code-editor-shell">
-            <pre className="code-editor-gutter" ref={gutterRef} aria-hidden="true">{Array.from({ length: lineCount }, (_, index) => <span key={index} className={errorLines.has(index + 1) && !dirty ? 'is-error' : ''}>{index + 1}</span>)}</pre>
-            <label className="sr-only" htmlFor="sketch-code">Arduino code</label>
-            <textarea
-              id="sketch-code"
-              ref={textareaRef}
-              className="code-editor"
-              value={code}
-              onChange={(event) => setCode(event.target.value)}
-              onScroll={(event) => { if (gutterRef.current) gutterRef.current.scrollTop = event.currentTarget.scrollTop }}
-              onKeyDown={(event) => {
-                if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') { event.preventDefault(); compile() }
-                if (event.key === 'Tab' && !event.shiftKey) {
-                  event.preventDefault()
-                  const target = event.currentTarget
-                  const { selectionStart, selectionEnd } = target
-                  setCode(`${code.slice(0, selectionStart)}  ${code.slice(selectionEnd)}`)
-                  requestAnimationFrame(() => target.setSelectionRange(selectionStart + 2, selectionStart + 2))
-                }
-              }}
-              spellCheck={false}
-              wrap="off"
-              aria-describedby="code-help"
-            />
-          </div>
-          <div id="code-help" className="editor-help"><CircleHelp size={14} /><span>Supports <code>setup()</code>/<code>loop()</code>, variables, arrays, <code>if</code>/<code>for</code>/<code>while</code>/<code>switch</code>, functions, <code>#define</code>, digital &amp; analog I/O, PWM, <code>tone()</code>, <code>delay()</code>/<code>millis()</code>, <code>Serial</code> and direct <code>DDRx</code>/<code>PORTx</code>/<code>PINx</code> registers. Libraries aren't simulated.</span></div>
-          {diagnostics.length > 0 && !dirty && (
-            <ul className="compiler-diagnostics" aria-label="Compiler messages">
-              {diagnostics.map(({ level, item }, index) => (
-                <li key={`${level}-${item.line}-${index}`} className={`is-${level}`}>
-                  <button type="button" onClick={() => focusLine(item.line)} title="Go to this line">
-                    {level === 'error' ? <CircleX size={14} /> : <AlertTriangle size={14} />}
-                    <span className="diagnostic-line">line {item.line}</span>
-                    <span>{item.message}</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-          <div className="editor-actions">
-            <button type="button" className="primary-button" onClick={compile}><Hammer size={15} /> Compile &amp; Run</button>
-            <span className="editor-actions-caption">{dirty ? 'Code changed. Compile again to update.' : 'Ctrl + Enter · simulation only, no USB'}</span>
-          </div>
+          <div className="panel-heading code-panel-heading"><div><span className="eyebrow">SKETCH INPUT</span><h2><Terminal size={17} /> Arduino snippet</h2></div><button type="button" className="icon-button" title="Restore example code" aria-label="Restore example code" onClick={() => { setCode(starterCode); reset() }}><RotateCcw size={16} /></button></div>
+          <div className="editor-toolbar"><span className="editor-language"><span /> C++ / ARDUINO</span><span>ATmega328P · Uno R3</span></div>
+          <label className="sr-only" htmlFor="sketch-code">Arduino code</label>
+          <textarea id="sketch-code" className="code-editor" value={code} onChange={(event) => setCode(event.target.value)} spellCheck={false} aria-describedby="code-help" />
+          <div id="code-help" className="editor-help"><CircleHelp size={14} /><span>Supports <code>pinMode()</code> and <code>digitalWrite()</code> for D0–D13.</span></div>
+          {message && <p className="inline-error" role="alert">{message}</p>}
+          <div className="editor-actions"><button type="button" className="primary-button" onClick={visualize} disabled={running}><Play size={15} fill="currentColor" /> Visualize</button><span className="editor-actions-caption">Simulation only · no USB connection</span></div>
         </section>
-        <section className="panel flow-panel compiler-output-panel">
-          <div className="panel-heading"><div><span className="eyebrow">COMPILER OUTPUT</span><h2>Build &amp; Serial Monitor</h2></div><span className={`flow-state build-state ${!result.ok || result.runtimeError ? 'is-error' : 'is-ok'}`}><span />{!result.ok ? 'FAILED' : result.runtimeError ? 'RUNTIME ERROR' : 'OK'}</span></div>
-          <p className={`build-status ${!result.ok || result.runtimeError ? 'is-error' : ''}`}>{buildStatus}{dirty ? ' (for the previous version of the code)' : ''}</p>
-          {run && (
-            <div className="build-stats">
-              <div><span>HARDWARE OPS</span><strong>{run.events.length}</strong></div>
-              <div><span>LOOP() RUNS</span><strong>{run.loopIterations}</strong></div>
-              <div><span>SIM TIME</span><strong>{run.final.timeMs >= 1000 ? `${(run.final.timeMs / 1000).toFixed(2)} s` : `${run.final.timeMs.toFixed(1)} ms`}</strong></div>
-            </div>
-          )}
-          {run && <p className="build-note">{run.runtimeError ? `Line ${run.runtimeError.line}: ${run.runtimeError.message}` : run.stopReason} The simulator runs loop() up to {SIMULATOR_LIMITS.loopIterations} times and records at most {SIMULATOR_LIMITS.events} operations.</p>}
-          {runKey > 0 && detected.length > 0 && (
-            <div className="detected-parts">
-              <div className="serial-monitor-heading"><span>COMPONENTS IN THIS SKETCH</span><small>{detected.length} found</small></div>
-              <div className="detected-parts-list">{detected.map((part) => <span key={part.id} title={part.inferred}>{COMPONENT_LESSONS[part.id].name}{part.pins.length ? ` · ${[...new Set(part.pins.map((pin) => pin.pin))].join(', ')}` : ''}</span>)}</div>
-              {onOpenLearnMode && <button type="button" className="secondary-button" onClick={onOpenLearnMode}><BookOpen size={14} /> Learn how they work <ArrowRight size={14} /></button>}
-            </div>
-          )}
-          <div className="serial-monitor">
-            <div className="serial-monitor-heading"><span>SERIAL MONITOR</span><small>{run?.serial ? `${run.serial.length} bytes` : 'no output'}</small></div>
-            <pre>{run?.serial || (run ? 'Nothing printed. Use Serial.begin() and Serial.println() to send text.' : 'Compile the sketch to see its serial output.')}</pre>
-          </div>
+        <section className="panel flow-panel">
+          <div className="panel-heading"><div><span className="eyebrow">LIVE EXECUTION PATH</span><h2>Software to pin</h2></div><span className="flow-state"><span className={running ? 'pulse-dot' : ''} />{running ? 'RUNNING' : flow.length ? 'COMPLETE' : 'READY'}</span></div>
+          {flow.length ? <div className="flow-stages">{flow.map((step, index) => <div key={`${step}-${index}`} className={`flow-stage ${index === activeStep ? 'active' : ''} ${index < activeStep ? 'passed' : ''}`}><span className="flow-stage-index">{index < activeStep ? <Check size={13} /> : String(index + 1).padStart(2, '0')}</span><span>{step}</span>{index < flow.length - 1 && <ArrowDown size={14} className="flow-stage-arrow" />}</div>)}</div> : <div className="flow-empty"><div className="empty-signal"><ArrowDown size={18} /></div><strong>Waiting for a sketch</strong><span>Run the example to animate its route through the MCU.</span></div>}
+          <div className="flow-legend"><span><i className="legend-dot code" /> Code</span><span><i className="legend-dot mcu" /> MCU / register</span><span><i className="legend-dot output" /> Physical pin</span></div>
         </section>
       </div>
     </div>

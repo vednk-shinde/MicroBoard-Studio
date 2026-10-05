@@ -1,17 +1,13 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Activity, ArrowRight, BookOpen, Cable, Camera, ChevronRight, CircleHelp, Code2, Cpu, Gauge, LayoutDashboard, Lightbulb, Menu, Settings2, Usb, X } from 'lucide-react'
 import { ArduinoBoard } from './components/ArduinoBoard'
 import { CameraScanner } from './components/CameraScanner'
-import { ChatAssistant } from './components/ChatAssistant'
 import { CodeVisualizer } from './components/CodeVisualizer'
-import { LearnMode } from './components/LearnMode'
 import { PeripheralMapper } from './components/PeripheralMapper'
 import { PinExplorer } from './components/PinExplorer'
 import { RegisterViewer } from './components/RegisterViewer'
 import { analogPins, digitalPins, getPin, pinMap, type PeripheralName, type PinLevel, type PinMode } from './data/pins'
 import { microBoardSerial, type SerialInfo } from './services/serial'
-import { COMPONENT_LESSONS } from './data/componentLessons'
-import { lessonKeyFor, mergeProjectComponents, type InventoryPart, type ProjectComponent } from './sim/componentDetection'
 import './App.css'
 
 type PageId = 'dashboard' | 'pin-explorer' | 'peripheral-mapper' | 'code-visualizer' | 'camera-scanner' | 'register-viewer' | 'hardware-monitor' | 'learn-mode' | 'settings'
@@ -32,21 +28,6 @@ const navItems: { id: PageId; label: string; icon: typeof Activity; group: strin
   { id: 'learn-mode', label: 'Learn Mode', icon: BookOpen, group: 'MORE' },
   { id: 'settings', label: 'Settings', icon: Settings2, group: 'MORE' },
 ]
-
-const PROJECT_STORAGE_KEY = 'microboard.project.v1'
-
-// Components found in the last compiled sketch and in the scanner inventory survive a page reload.
-function loadProject(): { code: ProjectComponent[]; inventory: InventoryPart[] } {
-  try {
-    const saved = JSON.parse(localStorage.getItem(PROJECT_STORAGE_KEY) ?? '{}') as { code?: ProjectComponent[]; inventory?: InventoryPart[] }
-    return {
-      code: Array.isArray(saved.code) ? saved.code.filter((part) => part && part.id in COMPONENT_LESSONS) : [],
-      inventory: Array.isArray(saved.inventory) ? saved.inventory.filter((part) => part && typeof part.profileId === 'string') : [],
-    }
-  } catch {
-    return { code: [], inventory: [] }
-  }
-}
 
 const lessons = [
   { title: 'What is an Arduino pin?', body: 'A labelled Arduino pin is a board-level name for a physical connection. Uno D13 is routed to ATmega328P pad PB5.', example: 'D13 → PB5' },
@@ -114,23 +95,12 @@ function App() {
   const [serialInfo, setSerialInfo] = useState<SerialInfo>(microBoardSerial.getSnapshot())
   const [toast, setToast] = useState('')
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
-  const [activeLesson, setActiveLesson] = useState('basic-0')
-  const [codeParts, setCodeParts] = useState<ProjectComponent[]>(() => loadProject().code)
-  const [inventoryParts, setInventoryParts] = useState<InventoryPart[]>(() => loadProject().inventory)
+  const [activeLesson, setActiveLesson] = useState(0)
   const [generatedDesignCode, setGeneratedDesignCode] = useState<string | null>(null)
   const [reducedMotion, setReducedMotion] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches)
   const pin = getPin(selectedPin)
   const ledOn = modes.D13 === 'OUTPUT' && levels.D13 === 'HIGH'
   const isPhysicalConnected = serialInfo.state === 'connected'
-  const projectParts = useMemo(() => mergeProjectComponents(codeParts, inventoryParts), [codeParts, inventoryParts])
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(PROJECT_STORAGE_KEY, JSON.stringify({ code: codeParts, inventory: inventoryParts }))
-    } catch {
-      // Storage can be unavailable (private mode); the project then lasts for this session only.
-    }
-  }, [codeParts, inventoryParts])
 
   useEffect(() => {
     const unsubscribe = microBoardSerial.subscribe((next) => {
@@ -308,9 +278,9 @@ function App() {
       case 'peripheral-mapper':
         return <PeripheralMapper activePeripheral={activePeripheral} selectedPin={selectedPin} onPeripheralChange={setActivePeripheral} onSelectPin={setSelectedPin} />
       case 'code-visualizer':
-        return <CodeVisualizer key={generatedDesignCode ?? 'starter'} initialCode={generatedDesignCode ?? undefined} onSimulationChange={updateSimulation} onSelectPin={setSelectedPin} reducedMotion={reducedMotion} onComponentsDetected={(parts) => { setCodeParts(parts); if (parts[0]) setActiveLesson(lessonKeyFor(parts[0])) }} onOpenLearnMode={() => navigate('learn-mode')} />
+        return <CodeVisualizer key={generatedDesignCode ?? 'starter'} initialCode={generatedDesignCode ?? undefined} onSimulationChange={updateSimulation} onSelectPin={setSelectedPin} reducedMotion={reducedMotion} />
       case 'camera-scanner':
-        return <CameraScanner onOpenCodeVisualizer={(code) => { setGeneratedDesignCode(code); navigate('code-visualizer') }} onInventoryChange={setInventoryParts} />
+        return <CameraScanner onOpenCodeVisualizer={(code) => { setGeneratedDesignCode(code); navigate('code-visualizer') }} />
       case 'register-viewer':
         return <RegisterViewer selectedPin={pin} modes={modes} levels={levels} onSelectPin={setSelectedPin} onTogglePin={(pinId) => { if (modes[pinId] === 'OUTPUT') setLevels((current) => ({ ...current, [pinId]: current[pinId] === 'HIGH' ? 'LOW' : 'HIGH' })); else setToast('Set this pin to OUTPUT in Pin Explorer before toggling its output level.') }} />
       case 'hardware-monitor':
@@ -325,7 +295,7 @@ function App() {
           onReadPin={handleReadPhysical}
         />
       case 'learn-mode':
-        return <LearnMode basics={lessons} parts={projectParts} activeLesson={activeLesson} onSelectLesson={setActiveLesson} onOpenCodeVisualizer={() => navigate('code-visualizer')} onOpenScanner={() => navigate('camera-scanner')} onClearProject={() => { setCodeParts([]); setInventoryParts([]) }} />
+        return <LearnMode activeLesson={activeLesson} onSelectLesson={setActiveLesson} />
       case 'settings':
         return <SettingsPage reducedMotion={reducedMotion} onChangeMotion={setReducedMotion} onReset={() => { setModes(initialState('INPUT')); setLevels(initialState('LOW')); setPhysicalPins({}); setToast('Virtual pin state reset.') }} />
       default:
@@ -344,7 +314,6 @@ function App() {
         <div className="content-area" key={page}>{renderPage()}</div>
         <footer className="app-footer"><span><i /> SIMULATION ENVIRONMENT</span><span>UNO R3 <b>·</b> ATMEGA328P <b>·</b> 16 MHz</span></footer>
       </main>
-      <ChatAssistant pageLabel={navItems.find((item) => item.id === page)?.label ?? 'Dashboard'} parts={projectParts} />
       {toast && <div className="toast-message" role="status"><CircleHelp size={16} /><span>{toast}</span><button type="button" onClick={() => setToast('')} aria-label="Dismiss notification"><X size={15} /></button></div>}
     </div>
   )
@@ -418,6 +387,10 @@ function HardwareMonitor({ modes, levels, onSelectPin, serialInfo, physicalPins,
     })}</div></section>)}</div>
 }
 
+function LearnMode({ activeLesson, onSelectLesson }: { activeLesson: number; onSelectLesson: (index: number) => void }) {
+  const lesson = lessons[activeLesson]
+  return <div className="page-stack"><div className="page-title-row"><div><span className="eyebrow">GUIDED CONCEPTS / AVR BASICS</span><h1>Learn the signal path</h1><p>Short lessons grounded in the Uno R3 and ATmega328P.</p></div><BookOpen className="page-icon" size={22} /></div><div className="learn-layout"><section className="panel lesson-list"><div className="panel-heading"><div><span className="eyebrow">THE BASICS</span><h2>6 lessons</h2></div></div>{lessons.map((item, index) => <button type="button" key={item.title} className={`lesson-item ${activeLesson === index ? 'active' : ''}`} onClick={() => onSelectLesson(index)}><span>{String(index + 1).padStart(2, '0')}</span><strong>{item.title}</strong><ChevronRight size={14} /></button>)}</section><article className="panel lesson-detail"><span className="eyebrow">LESSON {String(activeLesson + 1).padStart(2, '0')} / MICROCONTROLLER BASICS</span><h2>{lesson.title}</h2><p>{lesson.body}</p><div className="lesson-demo"><span className="eyebrow">SIGNAL EXAMPLE</span><strong>{lesson.example}</strong><span>ARDUINO UNO R3 · ATMEGA328P</span></div><div className="lesson-pagination"><span>{activeLesson + 1} / {lessons.length}</span><button type="button" disabled={activeLesson === lessons.length - 1} onClick={() => onSelectLesson(activeLesson + 1)}>Next lesson <ArrowRight size={14} /></button></div></article></div></div>
+}
 
 function SettingsPage({ reducedMotion, onChangeMotion, onReset }: { reducedMotion: boolean; onChangeMotion: (value: boolean) => void; onReset: () => void }) {
   return <div className="page-stack"><div className="page-title-row"><div><span className="eyebrow">PREFERENCES / LOCAL WORKSPACE</span><h1>Settings</h1><p>Adjust simulation and accessibility preferences.</p></div><Settings2 className="page-icon" size={22} /></div><section className="panel settings-panel"><div className="panel-heading"><div><span className="eyebrow">PREFERENCES</span><h2>Workspace behavior</h2></div></div><label className="setting-row"><span><strong>Reduce animation</strong><small>Show code flow stages immediately and limit motion.</small></span><input type="checkbox" checked={reducedMotion} onChange={(event) => onChangeMotion(event.target.checked)} /></label><div className="setting-row"><span><strong>Hardware communication</strong><small>Web Serial is available only when the browser supports it and a physical Arduino is connected.</small></span><span className="connection-status"><i /> {microBoardSerial.isConnected() ? 'CONNECTED' : 'DISCONNECTED'}</span></div><div className="setting-row"><span><strong>Reset simulation</strong><small>Return all virtual pins to INPUT and LOW.</small></span><button type="button" className="secondary-button" onClick={onReset}>Reset pins</button></div></section></div>

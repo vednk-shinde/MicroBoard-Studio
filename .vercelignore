@@ -4,9 +4,6 @@ dist/
 .vercel/
 .venv/
 **/.venv/
-**/.venv-*/
-ml/datasets/
-ml/runs/
 __pycache__/
 **/__pycache__/
 *.py[cod]
@@ -21,5 +18,4 @@ ml/models/*
 ml/models/yolo11n_cpu_seed42_batch8-3/*
 !ml/models/yolo11n_cpu_seed42_batch8-3/weights/
 ml/models/yolo11n_cpu_seed42_batch8-3/weights/*
-!ml/models/yolo11n_cpu_seed42_batch8-3/weights/best.onnxml/weights/
-runs/
+!ml/models/yolo11n_cpu_seed42_batch8-3/weights/best.onnx

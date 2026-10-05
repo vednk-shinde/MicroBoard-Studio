@@ -1,6 +1,5 @@
 import { ArrowDownRight, ArrowRight, Cable, CircleHelp } from 'lucide-react'
 import { getPin, peripheralNames, pinMap, type PeripheralName } from '../data/pins'
-import './PeripheralMapper.css'
 
 interface PeripheralMapperProps {
   activePeripheral: PeripheralName | null
@@ -23,7 +22,7 @@ export function PeripheralMapper({ activePeripheral, selectedPin, onPeripheralCh
   const groups = activePeripheral ? [{ peripheral: activePeripheral, pins: mappedPins }] : peripheralNames.map((peripheral) => ({ peripheral, pins: pinMap.filter((pin) => pin.peripherals.includes(peripheral)) }))
 
   return (
-    <div className="page-stack peripheral-page">
+    <div className="page-stack">
       <div className="page-title-row">
         <div><span className="eyebrow">ROUTING / PERIPHERAL MAPPER</span><h1>Peripheral map</h1><p>Highlight the Arduino pins assigned to each ATmega328P peripheral.</p></div>
         <div className="title-icon"><Cable size={21} /></div>
@@ -34,7 +33,7 @@ export function PeripheralMapper({ activePeripheral, selectedPin, onPeripheralCh
           <div className="peripheral-options">
             {peripheralNames.map((peripheral) => {
               const count = pinMap.filter((pin) => pin.peripherals.includes(peripheral)).length
-              return <button type="button" key={peripheral} className={`peripheral-option ${activePeripheral === peripheral ? 'active' : ''}`} data-peripheral={peripheral} onClick={() => onPeripheralChange(activePeripheral === peripheral ? null : peripheral)} aria-pressed={activePeripheral === peripheral}>
+              return <button type="button" key={peripheral} className={`peripheral-option ${activePeripheral === peripheral ? 'active' : ''}`} onClick={() => onPeripheralChange(activePeripheral === peripheral ? null : peripheral)} aria-pressed={activePeripheral === peripheral}>
                 <span className="peripheral-option-icon"><Cable size={16} /></span><span className="peripheral-option-text"><strong>{peripheral}</strong><small>{count} mapped pins</small></span><ArrowRight size={15} />
               </button>
             })}
@@ -45,7 +44,7 @@ export function PeripheralMapper({ activePeripheral, selectedPin, onPeripheralCh
           <div className="panel-heading"><div><span className="eyebrow">SIGNAL ROUTES</span><h2>{activePeripheral ?? 'All peripherals'}</h2></div><span className="route-count">{activePeripheral ? mappedPins.length : pinMap.reduce((sum, pin) => sum + pin.peripherals.length, 0)} ROUTES</span></div>
           {activePeripheral && <p className="peripheral-description">{peripheralNotes[activePeripheral]}</p>}
           <div className="route-groups">
-            {groups.map(({ peripheral, pins }) => <div className="route-group" key={peripheral} data-peripheral={peripheral}>
+            {groups.map(({ peripheral, pins }) => <div className="route-group" key={peripheral}>
               {!activePeripheral && <div className="route-group-title">{peripheral}<span>{pins.length} pins</span></div>}
               <div className="route-list">{pins.map((pin) => {
                 const functionLabel = pin.functions.find((fn) => fn.toUpperCase().includes(peripheral === 'I2C' ? 'I2C' : peripheral === 'Interrupts' ? 'INT' : peripheral)) ?? pin.functions.at(-1) ?? pin.functions[0]
