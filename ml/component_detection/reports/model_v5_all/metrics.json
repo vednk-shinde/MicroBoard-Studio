@@ -1,0 +1,223 @@
+{
+  "test": {
+    "precision": 0.588,
+    "recall": 0.543,
+    "mAP50": 0.574,
+    "mAP50-95": 0.443
+  },
+  "per_class": {
+    "Battery_Holder": {
+      "precision": 0.617,
+      "recall": 0.25,
+      "mAP50": 0.402,
+      "mAP50-95": 0.241
+    },
+    "Breadboard": {
+      "precision": 0.427,
+      "recall": 0.625,
+      "mAP50": 0.353,
+      "mAP50-95": 0.213
+    },
+    "Capacitor": {
+      "precision": 0.455,
+      "recall": 0.6,
+      "mAP50": 0.574,
+      "mAP50-95": 0.513
+    },
+    "Connector": {
+      "precision": 0.864,
+      "recall": 0.8,
+      "mAP50": 0.84,
+      "mAP50-95": 0.737
+    },
+    "Crystal_Oscillator": {
+      "precision": 0.584,
+      "recall": 0.237,
+      "mAP50": 0.379,
+      "mAP50-95": 0.275
+    },
+    "Diode": {
+      "precision": 0.539,
+      "recall": 0.8,
+      "mAP50": 0.767,
+      "mAP50-95": 0.452
+    },
+    "Heat_Sink": {
+      "precision": 0.883,
+      "recall": 0.757,
+      "mAP50": 0.784,
+      "mAP50-95": 0.741
+    },
+    "Inductor": {
+      "precision": 0.34,
+      "recall": 0.5,
+      "mAP50": 0.495,
+      "mAP50-95": 0.446
+    },
+    "Jumper_Wires": {
+      "precision": 0.68,
+      "recall": 0.667,
+      "mAP50": 0.615,
+      "mAP50-95": 0.422
+    },
+    "Microcontroller_Board": {
+      "precision": 0.863,
+      "recall": 0.775,
+      "mAP50": 0.9,
+      "mAP50-95": 0.752
+    },
+    "Potentiometer": {
+      "precision": 0.37,
+      "recall": 0.333,
+      "mAP50": 0.456,
+      "mAP50-95": 0.249
+    },
+    "Power_Supply_Module": {
+      "precision": 0.358,
+      "recall": 0.333,
+      "mAP50": 0.311,
+      "mAP50-95": 0.283
+    },
+    "Resistor": {
+      "precision": 0.496,
+      "recall": 0.286,
+      "mAP50": 0.347,
+      "mAP50-95": 0.205
+    },
+    "Arduino_Uno": {
+      "precision": 0.397,
+      "recall": 0.5,
+      "mAP50": 0.638,
+      "mAP50-95": 0.447
+    },
+    "ESP8266_NodeMCU": {
+      "precision": 0.575,
+      "recall": 0.726,
+      "mAP50": 0.828,
+      "mAP50-95": 0.712
+    },
+    "LED": {
+      "precision": 0.954,
+      "recall": 0.5,
+      "mAP50": 0.495,
+      "mAP50-95": 0.396
+    }
+  },
+  "thresholds": {
+    "Battery_Holder": 0.65,
+    "Breadboard": 0.6,
+    "Capacitor": 0.7,
+    "Connector": 0.85,
+    "Crystal_Oscillator": 0.9,
+    "Diode": 0.6,
+    "Heat_Sink": 0.7,
+    "Inductor": 0.55,
+    "Jumper_Wires": 0.65,
+    "Microcontroller_Board": 0.6,
+    "Potentiometer": 0.6,
+    "Power_Supply_Module": 0.8,
+    "Resistor": 0.6,
+    "Arduino_Mega": 0.6,
+    "Arduino_Nano": 0.6,
+    "Arduino_Uno": 0.55,
+    "DC_Motor": 0.6,
+    "ESP32_DevBoard": 0.6,
+    "ESP8266_NodeMCU": 0.7,
+    "HC-SR04_Ultrasonic": 0.6,
+    "LCD_16x2": 0.6,
+    "LED": 0.5,
+    "PIR_Sensor": 0.6,
+    "Transistor": 0.6,
+    "USB_Cable": 0.6
+  },
+  "unreliable_classes": [
+    "Breadboard",
+    "Diode",
+    "Microcontroller_Board",
+    "Potentiometer",
+    "Resistor",
+    "Arduino_Mega",
+    "Arduino_Nano",
+    "DC_Motor",
+    "ESP32_DevBoard",
+    "HC-SR04_Ultrasonic",
+    "LCD_16x2",
+    "PIR_Sensor",
+    "Transistor",
+    "USB_Cable"
+  ],
+  "test_images": 174,
+  "test_images_fully_correct": 103,
+  "background_images": 47,
+  "background_images_with_false_detection": 4,
+  "false_positives": {
+    "Potentiometer": 3,
+    "Diode": 2,
+    "Power_Supply_Module": 1,
+    "Battery_Holder": 2,
+    "Breadboard": 5,
+    "Capacitor": 4,
+    "Crystal_Oscillator": 1,
+    "Inductor": 2,
+    "LED": 1,
+    "Resistor": 1
+  },
+  "false_negatives": {
+    "Battery_Holder": 12,
+    "Breadboard": 3,
+    "Capacitor": 5,
+    "Connector": 3,
+    "Crystal_Oscillator": 11,
+    "Diode": 1,
+    "Heat_Sink": 3,
+    "Inductor": 2,
+    "Jumper_Wires": 3,
+    "Microcontroller_Board": 7,
+    "Arduino_Uno": 1,
+    "ESP8266_NodeMCU": 1,
+    "LED": 1,
+    "Potentiometer": 4,
+    "Power_Supply_Module": 1,
+    "Resistor": 4
+  },
+  "confused_pairs": {
+    "Power_Supply_Module -> Microcontroller_Board": 3,
+    "Microcontroller_Board -> Arduino_Uno": 2,
+    "Battery_Holder -> Microcontroller_Board": 1,
+    "Crystal_Oscillator -> DC_Motor": 1,
+    "Jumper_Wires -> Breadboard": 1,
+    "Microcontroller_Board -> Power_Supply_Module": 1,
+    "Resistor -> Diode": 1
+  },
+  "calibration": {
+    "0.5-0.6": {
+      "predictions": 1,
+      "actually_correct": 1.0
+    },
+    "0.6-0.7": {
+      "predictions": 4,
+      "actually_correct": 0.5
+    },
+    "0.7-0.8": {
+      "predictions": 12,
+      "actually_correct": 0.333
+    },
+    "0.8-0.9": {
+      "predictions": 53,
+      "actually_correct": 0.774
+    },
+    "0.9-1.0": {
+      "predictions": 34,
+      "actually_correct": 0.706
+    }
+  },
+  "speed_ms_per_image_gpu": {
+    "preprocess": 1.0,
+    "inference": 4.65,
+    "loss": 0.0,
+    "postprocess": 0.77
+  },
+  "model_size": {
+    "best.pt_MB": 5.49
+  }
+}

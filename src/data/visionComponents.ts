@@ -15,6 +15,9 @@ const LEGACY_ALIASES: Record<string, string> = {
   // Component-detector (v1) class names that correspond exactly to a manifest entry.
   Heat_Sink: 'Heatsink',
   Relay: 'Relay_Module',
+  // Webcam component detector (v5) names that differ from the manifest spelling.
+  'HC-SR04_Ultrasonic': 'HC_SR04',
+  ESP8266_NodeMCU: 'NodeMCU_ESP8266',
 }
 
 // Manifest class → Learn Mode lesson.

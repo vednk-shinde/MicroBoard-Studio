@@ -29,6 +29,9 @@ MATCH_IOU = 0.5
 # The validation split has only 4-35 images per class, so a threshold picked there can be very low by chance
 # (e.g. 0.25). Never deploy a class below this confidence.
 MIN_THRESHOLD = 0.5
+# Classes that never reach the target precision on validation (or have too few validation images to tell) are still
+# shown above this confidence, but are flagged `unreliable` so the app warns that the name may be wrong.
+UNRELIABLE_THRESHOLD = 0.6
 
 
 def iou(a, b) -> float:
@@ -109,7 +112,7 @@ def choose_thresholds(records: list[dict], class_count: int, target: float) -> t
             if chosen is None and tp + fp and precision >= target:
                 chosen = threshold
         reliable = chosen is not None
-        thresholds[cls] = chosen if reliable else 0.9
+        thresholds[cls] = chosen if reliable else UNRELIABLE_THRESHOLD
         detail[cls] = {"threshold": thresholds[cls], "reaches_target_precision": reliable, "curve": info}
     return thresholds, detail
 

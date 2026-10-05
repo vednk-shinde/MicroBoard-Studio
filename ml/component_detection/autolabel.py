@@ -57,6 +57,30 @@ CLASSES: dict[str, tuple[str, str]] = {
     "transistor": ("transistor electronic component", "Transistor"),
 }
 
+# Extra classes for the webcam-oriented component_dataset (folder names lower-cased).
+CLASSES.update({
+    "arduino_uno": ("Arduino Uno blue microcontroller board", "Arduino_Uno"),
+    "arduino_nano": ("small Arduino Nano board", "Arduino_Nano"),
+    "arduino_mega": ("large Arduino Mega board", "Arduino_Mega"),
+    "esp32_devboard": ("ESP32 development board", "ESP32_DevBoard"),
+    "esp8266_nodemcu": ("ESP8266 NodeMCU board", "ESP8266_NodeMCU"),
+    "hc-sr04_ultrasonic": ("HC-SR04 ultrasonic distance sensor module with two round transducers", "HC-SR04_Ultrasonic"),
+    "dht11": ("DHT11 temperature and humidity sensor", "DHT11"),
+    "mpu6050": ("MPU6050 gyroscope accelerometer module", "MPU6050"),
+    "pir_sensor": ("PIR motion sensor with white dome", "PIR_Sensor"),
+    "ldr": ("LDR light dependent resistor photoresistor", "LDR"),
+    "servo_sg90": ("SG90 micro servo motor", "Servo_SG90"),
+    "dc_motor": ("small DC motor", "DC_Motor"),
+    "stepper_motor": ("stepper motor", "Stepper_Motor"),
+    "buzzer": ("electronic buzzer", "Buzzer"),
+    "relay_module": ("relay module board", "Relay_Module"),
+    "lcd_16x2": ("16x2 character LCD display", "LCD_16x2"),
+    "oled_display": ("small OLED display module", "OLED_Display"),
+    "l298n_driver": ("L298N motor driver board", "L298N_Driver"),
+    "push_button": ("push button switch", "Push_Button"),
+    "usb_cable": ("USB cable", "USB_Cable"),
+})
+
 # What scraped images often show instead of the component. Used only by the CLIP image check.
 DISTRACTORS = [
     "a person", "a human face", "a hand", "a text infographic", "a circuit diagram or schematic symbol", "a chart or graph",

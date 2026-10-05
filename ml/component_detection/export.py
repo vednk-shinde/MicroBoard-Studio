@@ -77,7 +77,7 @@ def main() -> int:
                      **({} if thresholds[name]["reaches_target_precision"] else {"unreliable": True})} for i, name in enumerate(names)],
         "policy": POLICY,
         "thresholdNote": "Per-class thresholds chosen on the validation split as the lowest confidence reaching 90% precision; "
-                         "classes marked unreliable never reached it and use 0.9.",
+                         "classes marked unreliable never reached it (or have too few validation images to tell) and use 0.6, and the app warns for them.",
         "evaluation": {"test": metrics["test"], "unreliable_classes": metrics["unreliable_classes"],
                        "background_images_with_false_detection": f"{metrics['background_images_with_false_detection']}/{metrics['background_images']}"},
     }

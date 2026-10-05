@@ -65,7 +65,7 @@ export function DetectedComponent({ detection, scanning }: DetectedComponentProp
       </p>
       {unreliable && (
         <p className="empty-state detection-warning" role="note">
-          This class is one of the model's weakest (it never reached 90% precision in testing), so treat this as a guess and check the part yourself.
+          This class has not been proven reliable (it never reached 90% precision in testing, or has too few test photos), so treat the name as a guess and check the part yourself.
         </p>
       )}
 

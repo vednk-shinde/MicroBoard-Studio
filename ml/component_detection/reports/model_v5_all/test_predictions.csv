@@ -1,0 +1,175 @@
+image,ground_truth,prediction,correct
+_background_00740.jpg,(no component),Unknown / nothing,yes
+_background_00743.jpg,(no component),Potentiometer 80%,no
+_background_00754.jpg,(no component),Unknown / nothing,yes
+_background_00758.jpg,(no component),Unknown / nothing,yes
+_background_00765.jpg,(no component),Diode 73%,no
+_background_00767.jpg,(no component),Power_Supply_Module 86%,no
+_background_00781.jpg,(no component),Unknown / nothing,yes
+_background_00787.jpg,(no component),Unknown / nothing,yes
+_background_00795.jpg,(no component),Unknown / nothing,yes
+_background_00799.jpg,(no component),Unknown / nothing,yes
+_background_00806.jpg,(no component),Unknown / nothing,yes
+_background_00807.jpg,(no component),Unknown / nothing,yes
+_background_00809.jpg,(no component),Battery_Holder 93%,no
+_background_00814.jpg,(no component),Unknown / nothing,yes
+_background_00815.jpg,(no component),Unknown / nothing,yes
+_background_00817.jpg,(no component),Unknown / nothing,yes
+_background_00819.jpg,(no component),Unknown / nothing,yes
+_background_00820.jpg,(no component),Unknown / nothing,yes
+_background_00822.jpg,(no component),Unknown / nothing,yes
+_background_00851.jpg,(no component),Unknown / nothing,yes
+_background_00860.jpg,(no component),Unknown / nothing,yes
+_background_00861.jpg,(no component),Unknown / nothing,yes
+_background_00863.jpg,(no component),Unknown / nothing,yes
+_background_00868.jpg,(no component),Unknown / nothing,yes
+_background_00871.jpg,(no component),Unknown / nothing,yes
+_background_00878.jpg,(no component),Unknown / nothing,yes
+_background_00886.jpg,(no component),Unknown / nothing,yes
+_background_00887.jpg,(no component),Unknown / nothing,yes
+_background_00896.jpg,(no component),Unknown / nothing,yes
+_background_00897.jpg,(no component),Unknown / nothing,yes
+_background_00909.jpg,(no component),Unknown / nothing,yes
+_background_00914.jpg,(no component),Unknown / nothing,yes
+_background_00919.jpg,(no component),Unknown / nothing,yes
+_background_00937.jpg,(no component),Unknown / nothing,yes
+_background_00946.jpg,(no component),Unknown / nothing,yes
+_background_00955.jpg,(no component),Unknown / nothing,yes
+_background_00978.jpg,(no component),Unknown / nothing,yes
+_background_01010.jpg,(no component),Unknown / nothing,yes
+_background_01011.jpg,(no component),Unknown / nothing,yes
+_background_01015.jpg,(no component),Unknown / nothing,yes
+_background_01016.jpg,(no component),Unknown / nothing,yes
+_background_01026.jpg,(no component),Unknown / nothing,yes
+_background_01027.jpg,(no component),Unknown / nothing,yes
+_background_01034.jpg,(no component),Unknown / nothing,yes
+_background_01040.jpg,(no component),Unknown / nothing,yes
+_background_01043.jpg,(no component),Unknown / nothing,yes
+_background_01048.jpg,(no component),Unknown / nothing,yes
+battery_holder_00154.jpg,Battery_Holder,Battery_Holder 82%,no
+battery_holder_00161.jpg,"Battery_Holder, Battery_Holder",Unknown / nothing,no
+battery_holder_00166.jpg,Battery_Holder,Unknown / nothing,no
+battery_holder_00167.jpg,Battery_Holder,Unknown / nothing,no
+battery_holder_00169.jpg,"Battery_Holder, Battery_Holder",Unknown / nothing,no
+battery_holder_00186.jpg,Battery_Holder,Battery_Holder 91%,yes
+battery_holder_00192.jpg,"Battery_Holder, Battery_Holder",Battery_Holder 85%,no
+battery_holder_00199.jpg,Battery_Holder,Unknown / nothing,no
+battery_holder_00206.jpg,Battery_Holder,Unknown / nothing,no
+battery_holder_00213.jpg,"Battery_Holder, Battery_Holder, Battery_Holder",Microcontroller_Board 74%,no
+battery_holder_00214.jpg,Battery_Holder,Battery_Holder 85%,yes
+breadboard_00226.jpg,Breadboard,Breadboard 85%,yes
+breadboard_00231.jpg,Breadboard,Breadboard 76%,yes
+breadboard_00245.jpg,Breadboard,Breadboard 85%,yes
+breadboard_00248.jpg,Breadboard,"Breadboard 95%, Breadboard 94%, Breadboard 94%, Breadboard 93%, Breadboard 93%",no
+breadboard_00252.jpg,Breadboard,Unknown / nothing,no
+breadboard_00258.jpg,Breadboard,Breadboard 92%,yes
+breadboard_00264.jpg,Breadboard,Breadboard 90%,yes
+breadboard_00272.jpg,Breadboard,Unknown / nothing,no
+capacitor_00276.jpg,Capacitor,Unknown / nothing,no
+capacitor_00281.jpg,Capacitor,"Capacitor 86%, Capacitor 81%",no
+capacitor_00283.jpg,Capacitor,Capacitor 82%,yes
+capacitor_00286.jpg,Capacitor,Capacitor 83%,yes
+capacitor_00306.jpg,Capacitor,Capacitor 91%,yes
+capacitor_00314.jpg,Capacitor,Unknown / nothing,no
+connector_00315.jpg,Connector,Unknown / nothing,no
+connector_00318.jpg,Connector,Connector 94%,yes
+connector_00327.jpg,Connector,Unknown / nothing,no
+connector_00334.jpg,Connector,Connector 91%,yes
+connector_00339.jpg,Connector,Unknown / nothing,no
+crystal_oscillator_00350.jpg,Crystal_Oscillator,Unknown / nothing,no
+crystal_oscillator_00351.jpg,Crystal_Oscillator,Crystal_Oscillator 91%,no
+crystal_oscillator_00356.jpg,"Crystal_Oscillator, Crystal_Oscillator, Crystal_Oscillator, Crystal_Oscillator, Crystal_Oscillator",Unknown / nothing,no
+crystal_oscillator_00357.jpg,Crystal_Oscillator,DC_Motor 82%,no
+crystal_oscillator_00364.jpg,Crystal_Oscillator,Unknown / nothing,no
+diode_00379.jpg,Diode,"Diode 84%, Diode 68%",no
+diode_00382.jpg,Diode,Diode 88%,yes
+diode_00400.jpg,Diode,Diode 81%,yes
+diode_00401.jpg,Diode,Diode 86%,yes
+diode_00404.jpg,Diode,Unknown / nothing,no
+heat_sink_00413.jpg,Heat_Sink,Heat_Sink 88%,yes
+heat_sink_00422.jpg,Heat_Sink,Heat_Sink 88%,yes
+heat_sink_00431.jpg,Heat_Sink,Unknown / nothing,no
+heat_sink_00436.jpg,Heat_Sink,Heat_Sink 88%,yes
+heat_sink_00444.jpg,Heat_Sink,Heat_Sink 86%,yes
+heat_sink_00448.jpg,Heat_Sink,Heat_Sink 88%,yes
+heat_sink_00452.jpg,Heat_Sink,Heat_Sink 93%,yes
+heat_sink_00454.jpg,Heat_Sink,Heat_Sink 91%,yes
+heat_sink_00467.jpg,Heat_Sink,Unknown / nothing,no
+heat_sink_00471.jpg,Heat_Sink,Unknown / nothing,no
+inductor_00483.jpg,Inductor,Unknown / nothing,no
+inductor_00488.jpg,Inductor,Inductor 83%,yes
+inductor_00491.jpg,Inductor,"Inductor 86%, Inductor 79%",no
+inductor_00496.jpg,Inductor,Inductor 87%,yes
+jumper_wires_00498.jpg,Jumper_Wires,Jumper_Wires 80%,yes
+jumper_wires_00500.jpg,"Jumper_Wires, Jumper_Wires",Jumper_Wires 77%,no
+jumper_wires_00502.jpg,Jumper_Wires,Unknown / nothing,no
+jumper_wires_00519.jpg,Jumper_Wires,Jumper_Wires 73%,yes
+jumper_wires_00521.jpg,Jumper_Wires,Jumper_Wires 86%,yes
+jumper_wires_00524.jpg,Jumper_Wires,Jumper_Wires 88%,yes
+jumper_wires_00526.jpg,Jumper_Wires,Unknown / nothing,no
+jumper_wires_00546.jpg,Jumper_Wires,Breadboard 89%,no
+microcontroller_board_00020.jpg,Microcontroller_Board,Microcontroller_Board 89%,yes
+microcontroller_board_00023.jpg,Microcontroller_Board,Unknown / nothing,no
+microcontroller_board_00028.jpg,Microcontroller_Board,Microcontroller_Board 86%,yes
+microcontroller_board_00029.jpg,Microcontroller_Board,Microcontroller_Board 87%,yes
+microcontroller_board_00030.jpg,Microcontroller_Board,Microcontroller_Board 87%,yes
+microcontroller_board_00031.jpg,Microcontroller_Board,Microcontroller_Board 89%,yes
+microcontroller_board_00042.jpg,Microcontroller_Board,Microcontroller_Board 91%,yes
+microcontroller_board_00046.jpg,Microcontroller_Board,Microcontroller_Board 91%,yes
+microcontroller_board_00061.jpg,"Microcontroller_Board, Microcontroller_Board","Microcontroller_Board 92%, Microcontroller_Board 90%",yes
+microcontroller_board_00066.jpg,"Microcontroller_Board, Microcontroller_Board, Microcontroller_Board","Microcontroller_Board 93%, Microcontroller_Board 87%, Microcontroller_Board 66%",yes
+microcontroller_board_00070.jpg,Microcontroller_Board,Microcontroller_Board 91%,yes
+microcontroller_board_00074.jpg,Microcontroller_Board,Microcontroller_Board 87%,yes
+microcontroller_board_00078.jpg,Microcontroller_Board,Unknown / nothing,no
+microcontroller_board_00083.jpg,"Microcontroller_Board, Microcontroller_Board, Microcontroller_Board","Microcontroller_Board 91%, Microcontroller_Board 91%, Microcontroller_Board 90%",yes
+microcontroller_board_00086.jpg,Microcontroller_Board,Microcontroller_Board 85%,yes
+microcontroller_board_00087.jpg,Microcontroller_Board,Microcontroller_Board 90%,yes
+microcontroller_board_00098.jpg,Microcontroller_Board,Unknown / nothing,no
+microcontroller_board_00099.jpg,Microcontroller_Board,Microcontroller_Board 91%,yes
+microcontroller_board_00104.jpg,Microcontroller_Board,Microcontroller_Board 92%,yes
+microcontroller_board_00115.jpg,Microcontroller_Board,Unknown / nothing,no
+microcontroller_board_00119.jpg,Microcontroller_Board,Microcontroller_Board 80%,yes
+microcontroller_board_00132.jpg,Microcontroller_Board,Microcontroller_Board 89%,yes
+microcontroller_board_00141.jpg,Microcontroller_Board,Microcontroller_Board 87%,yes
+microcontroller_board_00142.jpg,Microcontroller_Board,Microcontroller_Board 92%,yes
+microcontroller_board_00147.jpg,Microcontroller_Board,Microcontroller_Board 91%,yes
+microcontroller_board_00148.jpg,Microcontroller_Board,Microcontroller_Board 88%,yes
+microcontroller_board_00550.jpg,Microcontroller_Board,Microcontroller_Board 86%,yes
+microcontroller_board_00565.jpg,Microcontroller_Board,Arduino_Uno 73%,no
+microcontroller_board_00572.jpg,Microcontroller_Board,Power_Supply_Module 91%,no
+microcontroller_board_00577.jpg,Microcontroller_Board,Unknown / nothing,no
+microcontroller_board_00584.jpg,Microcontroller_Board,Unknown / nothing,no
+microcontroller_board_00586.jpg,Microcontroller_Board,Arduino_Uno 68%,no
+microcontroller_board_00615.jpg,Microcontroller_Board,Unknown / nothing,no
+microcontroller_board_00620.jpg,Microcontroller_Board,Microcontroller_Board 61%,yes
+microcontroller_board_00622.jpg,Microcontroller_Board,Microcontroller_Board 91%,yes
+new_arduino_uno_Arduino_Uno_0005.jpg,Arduino_Uno,Arduino_Uno 89%,yes
+new_arduino_uno_Arduino_Uno_0011.jpg,Arduino_Uno,Unknown / nothing,no
+new_capacitor_Capacitor_0006.jpg,Capacitor,Capacitor 85%,no
+new_capacitor_Capacitor_0010.jpg,Capacitor,"Capacitor 88%, Capacitor 76%",no
+new_capacitor_Capacitor_0013.jpg,Capacitor,Capacitor 83%,no
+new_capacitor_Capacitor_0021.jpg,Capacitor,Unknown / nothing,no
+new_crystal_oscillator_Crystal_Oscillator_0008.jpg,Crystal_Oscillator,Unknown / nothing,no
+new_crystal_oscillator_Crystal_Oscillator_0010.jpg,Crystal_Oscillator,Unknown / nothing,no
+new_crystal_oscillator_Crystal_Oscillator_0011.jpg,Crystal_Oscillator,Unknown / nothing,no
+new_esp8266_nodemcu_ESP8266_NodeMCU_0004.jpg,ESP8266_NodeMCU,ESP8266_NodeMCU 94%,yes
+new_esp8266_nodemcu_ESP8266_NodeMCU_0006.jpg,ESP8266_NodeMCU,Unknown / nothing,no
+new_led_LED_0001.jpg,LED,LED 57%,yes
+new_led_LED_0008.jpg,LED,LED 72%,no
+potentiometer_00629.jpg,Potentiometer,Potentiometer 93%,no
+potentiometer_00640.jpg,Potentiometer,Potentiometer 81%,yes
+potentiometer_00652.jpg,Potentiometer,Potentiometer 94%,yes
+potentiometer_00653.jpg,Potentiometer,Potentiometer 72%,no
+potentiometer_00655.jpg,Potentiometer,Unknown / nothing,no
+potentiometer_00664.jpg,Potentiometer,Unknown / nothing,no
+power_supply_module_00674.jpg,Power_Supply_Module,Unknown / nothing,no
+power_supply_module_00675.jpg,Power_Supply_Module,Microcontroller_Board 77%,no
+power_supply_module_00677.jpg,Power_Supply_Module,Microcontroller_Board 89%,no
+power_supply_module_00691.jpg,Power_Supply_Module,Power_Supply_Module 92%,yes
+power_supply_module_00696.jpg,Power_Supply_Module,Power_Supply_Module 89%,yes
+power_supply_module_00700.jpg,Power_Supply_Module,Microcontroller_Board 92%,no
+resistor_00712.jpg,"Resistor, Resistor",Unknown / nothing,no
+resistor_00724.jpg,Resistor,Unknown / nothing,no
+resistor_00728.jpg,Resistor,"Resistor 82%, Resistor 73%",no
+resistor_00735.jpg,"Resistor, Resistor",Resistor 84%,no
+resistor_00736.jpg,Resistor,Diode 82%,no

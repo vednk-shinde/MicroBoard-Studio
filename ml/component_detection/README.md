@@ -139,3 +139,23 @@ retrain; `export.py` writes the new class list into `model_meta.json`, and the a
   latest VC++ 2015-2022 x64 redistributable, or copy a newer `msvcp140.dll`, `vcruntime140.dll`,
   `vcruntime140_1.dll` and `concrt140.dll` into `ml/.venv-train/Lib/site-packages/torch/lib`.
 - `data.yaml` must use an absolute `path:`; `build_dataset.py` writes it that way.
+
+## Latest model: v5 (deployed) - 25 classes
+
+Trained on the original photos + `component_dataset` (Arduino boards and sensors, 81 of 293 images removed by eye)
++ about 3,900 generated webcam-style scenes. Pipeline: `label_small_set.py` -> `merge_new_set.py` ->
+`synthesize_scenes.py` -> `train.py` -> `evaluate.py` -> `export.py --deploy`; `camera_check.py` repeats a test on real
+webcam screenshots. Reports: `reports/model_v5_all/`.
+
+| | v1 | v5 (deployed) |
+|---|---|---|
+| Classes | 13 | 25 |
+| Test mAP50 / mAP50-95 | 0.549 / 0.401 | 0.574 / 0.443 |
+| Background images with a false detection | 3 / 47 | 4 / 47 |
+| Real webcam screenshot of an Arduino Uno, found in 10 runs | 0 | 8 (named "Microcontroller board", 91-95%) |
+| Real webcam screenshot of an HC-SR04, found in 10 runs | 0 | 0 |
+
+Honest limits: Arduino_Uno/Nano/Mega, ESP32, HC-SR04, PIR, LCD, USB cable, DC motor and transistor have only 3-11 training
+photos and no (or 1-2) test photos, so they are marked `unreliable` (threshold 0.6, warning in the app). Servo, DHT11,
+MPU6050, stepper, buzzer, relay and OLED had too few usable photos and are not trained. More real webcam photos of each part
+are the fix; add them and retrain with the commands above.
