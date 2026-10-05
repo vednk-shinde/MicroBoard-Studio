@@ -3,6 +3,7 @@ import { Camera, CircleCheck, ShieldAlert, ScanLine, Square } from 'lucide-react
 import { DetectionOverlay } from './DetectionOverlay'
 import { DetectedComponent } from './DetectedComponent'
 import { ComponentWorkspace } from './ComponentWorkspace'
+import type { InventoryPart } from '../sim/componentDetection'
 import type { ComponentDetector, Detection, DetectorInfo } from '../ml/detector'
 import { DetectionTracker } from '../ml/detectionPolicy'
 import { MODEL_META } from '../ml/modelMeta'
@@ -20,7 +21,7 @@ function primaryDetection(detections: Detection[]): Detection | null {
   return [...detections].sort((a, b) => rank(b) - rank(a) || b.confidence - a.confidence)[0] ?? null
 }
 
-export function CameraScanner({ onOpenCodeVisualizer }: { onOpenCodeVisualizer: (code: string) => void }) {
+export function CameraScanner({ onOpenCodeVisualizer, onInventoryChange }: { onOpenCodeVisualizer: (code: string) => void; onInventoryChange?: (parts: InventoryPart[]) => void }) {
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const detectorRef = useRef<ComponentDetector | null>(null)
@@ -294,7 +295,7 @@ export function CameraScanner({ onOpenCodeVisualizer }: { onOpenCodeVisualizer: 
 
         <DetectedComponent detection={selectedDetection} scanning={aiModelStatus === 'READY'} />
       </section>
-      <ComponentWorkspace detections={detections} onOpenCodeVisualizer={onOpenCodeVisualizer} />
+      <ComponentWorkspace detections={detections} onOpenCodeVisualizer={onOpenCodeVisualizer} onInventoryChange={onInventoryChange} />
     </div>
   )
 }

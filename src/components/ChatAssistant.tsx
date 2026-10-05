@@ -1,14 +1,18 @@
 import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react'
 import { Bot, Check, Copy, MessageCircle, RotateCcw, Send, X } from 'lucide-react'
 import { answerLocally, BOT_NAME, GREETING } from '../assistant/knowledge'
+import { COMPONENT_LESSONS } from '../data/componentLessons'
+import type { ProjectComponent } from '../sim/componentDetection'
 import './ChatAssistant.css'
 
 type ChatMessage = { role: 'user' | 'assistant'; text: string }
 
 type ChatAssistantProps = {
   pageLabel: string
+  parts: ProjectComponent[]
 }
 
+const SKETCH_STORAGE_KEY = 'microboard.sketch.v1'
 const FAILURE_MARKER = '\u0000'
 const WELCOME: ChatMessage = { role: 'assistant', text: GREETING }
 
@@ -18,8 +22,24 @@ function offlineReply(question: string): string {
   return reply === GREETING ? 'Hey! What are you building today? Tell me the parts you have, or paste the sketch you\'re stuck on.' : reply
 }
 
-function buildContext(pageLabel: string): string {
-  return `The chat window already greeted the user with your introduction, so don't introduce yourself again unless asked.\nCurrent page: ${pageLabel}`
+function currentSketch(): string {
+  try {
+    return localStorage.getItem(SKETCH_STORAGE_KEY) ?? ''
+  } catch {
+    return ''
+  }
+}
+
+function buildContext(pageLabel: string, parts: ProjectComponent[]): string {
+  const components = parts.length
+    ? parts.map((part) => {
+      const pins = part.pins.length ? ` (${part.pins.map((pin) => `${pin.role}=${pin.pin}`).join(', ')})` : ''
+      const origin = part.sources.map((source) => (source === 'code' ? 'from sketch' : source === 'camera' ? 'seen on camera only, not electrically verified' : 'added manually')).join(', ')
+      return `${COMPONENT_LESSONS[part.id].name}${pins} [${origin}]`
+    }).join('; ')
+    : 'none detected yet'
+  const sketch = currentSketch().slice(0, 8000)
+  return `The chat window already greeted the user with your introduction, so don't introduce yourself again unless asked.\nCurrent page: ${pageLabel}\nProject components: ${components}\nSketch in the Code Visualizer editor:\n${sketch || '(empty)'}`
 }
 
 // ---- lightweight, safe rendering of the reply format: paragraphs, **bold**, `code`, ```code blocks```,
@@ -113,7 +133,7 @@ function renderText(chunk: string, keyPrefix: string, blocks: ReactNode[]) {
   flushList(`l-end-${keyPrefix}`)
 }
 
-export function ChatAssistant({ pageLabel }: ChatAssistantProps) {
+export function ChatAssistant({ pageLabel, parts }: ChatAssistantProps) {
   const [open, setOpen] = useState(false)
   const [messages, setMessages] = useState<ChatMessage[]>([WELCOME])
   const [input, setInput] = useState('')
@@ -170,7 +190,7 @@ export function ChatAssistant({ pageLabel }: ChatAssistantProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           messages: conversation.slice(-12).map((message) => ({ role: message.role, content: message.text })),
-          context: buildContext(pageLabel),
+          context: buildContext(pageLabel, parts),
         }),
       })
       if (!response.ok || response.headers.get('X-Assistant-Mode') !== 'ai' || !response.body) {
