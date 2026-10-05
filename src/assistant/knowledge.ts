@@ -77,8 +77,14 @@ export const KNOWLEDGE: KnowledgeEntry[] = [
   {
     id: 'camera-scanner',
     title: 'How does the Camera Scanner work?',
-    keywords: ['camera', 'scanner', 'scan', 'detect', 'detection', 'yolo', 'onnx', 'model', 'recognize', 'manual', 'add', 'inventory', 'design', 'designer'],
-    answer: 'The **Camera Scanner** uses your camera and a YOLO11n model (ONNX, running in your browser, so nothing is uploaded) to detect parts. It recognises: Arduino Uno, ESP8266 NodeMCU, breadboard, LED, resistor, push button, potentiometer and jumper wire.\n- Confirm, correct or remove each detection, or use **Add manual** for parts the camera missed\n- **Create design** suggests connections and generates a starter sketch that opens in the Code Visualizer\n- Confirmed and manual parts also appear as lessons in Learn Mode\nParts outside that list (servo, MPU6050…) can\'t be detected by the camera yet, but they are picked up from your code.',
+    keywords: ['camera', 'scanner', 'scan', 'detect', 'detection', 'recognize', 'manual', 'add', 'inventory', 'design', 'designer'],
+    answer: 'The **Camera Scanner** uses your camera and a custom-trained **YOLO11n** model (ONNX, running in your browser, so nothing is uploaded). The current model detects **2 classes**: **ESP8266 NodeMCU** and **other board** (any other development board, e.g. Arduino Nano, ESP32 or Raspberry Pi). It does not yet detect an Arduino Uno, LEDs, resistors, buttons, potentiometers, breadboards or wires.\n- Confirm, correct or remove each detection. Use **Add manual** to add parts the camera can\'t detect (Uno, breadboard, LED, resistor, push button, potentiometer, jumper wire)\n- **Create design** suggests connections and generates a starter sketch that opens in the Code Visualizer\n- Confirmed and manual parts also appear as lessons in Learn Mode\nComponents such as servos or an MPU6050 are picked up from your code instead.',
+  },
+  {
+    id: 'yolo-model',
+    title: 'What YOLO model does the Camera Scanner use?',
+    keywords: ['yolo', 'yolo11', 'yolo11n', 'model', 'onnx', 'trained', 'training', 'dataset', 'accuracy', 'map', 'precision', 'recall', 'classes', 'ultralytics', 'machine', 'learning', 'ai', 'ml'],
+    answer: 'The Camera Scanner uses **YOLO11n** (Ultralytics, the "nano" size, about 2.6 M parameters), fine-tuned from COCO-pretrained weights.\n- **Classes (2)**: `esp8266_nodemcu` and `other_board`\n- **Dataset**: 149 images from the Kaggle "Microcontroller Detection" set (ESP8266, Arduino Nano, Heltec ESP32 LoRa, Raspberry Pi 3; the last three merged into other_board), split 70/20/10 → 104 train, 30 val, 15 test\n- **Training**: 640×640 images, batch 8, CPU only, up to 50 epochs with early stopping (stopped at 47, best epoch 37), seed 42, about 37 minutes\n- **Results (validation)**: precision 0.956, recall 0.949, mAP50 0.967, mAP50-95 0.857. The test set is very small (15 images), so its numbers are less reliable\n- **In the browser**: exported to ONNX (≈ 10.6 MB) and run with onnxruntime-web (WebAssembly) about once a second, with a 0.4 confidence threshold and non-max suppression at IoU 0.45. Camera frames never leave the device\nAn Arduino Uno class will be added once enough real, labelled Uno photos are collected.',
   },
   {
     id: 'learn-mode',
@@ -144,7 +150,7 @@ export const KNOWLEDGE: KnowledgeEntry[] = [
     id: 'tech-stack',
     title: 'What is it built with?',
     keywords: ['built', 'tech', 'stack', 'technology', 'react', 'typescript', 'vite', 'framework', 'code', 'github', 'source', 'repo', 'deployed', 'vercel', 'how'],
-    answer: 'Tech stack:\n- **Web app**: React 19 + TypeScript + Vite, icons from lucide-react\n- **Board link**: Web Serial API (Chrome/Edge) + Arduino firmware with a text protocol\n- **Camera detection**: YOLO11n model exported to ONNX, run in the browser with onnxruntime-web\n- **Simulator**: a custom Arduino C++ interpreter that models the ATmega328P registers, timers, ADC, USART and I²C\n- **Hosting**: Vercel\nSource code: github.com/vednk-shinde/MicroBoard-Studio',
+    answer: 'Tech stack:\n- **Web app**: React 19 + TypeScript + Vite, icons from lucide-react\n- **Board link**: Web Serial API (Chrome/Edge) + Arduino firmware with a text protocol\n- **Camera detection**: custom-trained YOLO11n (2 classes) exported to ONNX, run in the browser with onnxruntime-web\n- **Simulator**: a custom Arduino C++ interpreter that models the ATmega328P registers, timers, ADC, USART and I²C\n- **Hosting**: Vercel\nSource code: github.com/vednk-shinde/MicroBoard-Studio',
   },
   {
     id: 'roadmap',
