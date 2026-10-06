@@ -1811,6 +1811,64 @@
 }
 
 /* A pin that is HIGH glows; an OUTPUT pin that is driving HIGH (e.g. an LED) glows stronger. */
+.wired-pin-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 6px 0 10px;
+}
+
+.wired-pin-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(142, 223, 182, 0.55);
+  background: rgba(142, 223, 182, 0.1);
+  color: var(--text);
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 0 12px rgba(142, 223, 182, 0.25);
+}
+
+.wired-pin-chip i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--mint);
+  box-shadow: 0 0 8px var(--mint);
+}
+
+.wired-pin-chip small {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.wired-note {
+  display: block;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.wired-warning {
+  color: var(--amber);
+}
+
+.monitor-card.is-wired {
+  border-color: rgba(160, 239, 242, 0.55);
+}
+
+.wired-badge {
+  font-style: normal;
+  font-size: 0.55rem;
+  letter-spacing: 0.12em;
+  padding: 2px 6px;
+  border-radius: 999px;
+  color: var(--accent-light);
+  background: rgba(160, 239, 242, 0.12);
+}
+
 .firmware-notice {
   margin-top: 14px;
   padding: 14px 16px;

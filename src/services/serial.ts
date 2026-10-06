@@ -261,13 +261,13 @@ class MicroBoardSerialService {
     }
   }
 
-  public async sendCommand(command: string, options: { silent?: boolean } = {}): Promise<string> {
-    const operation = this.commandQueue.then(() => this.sendCommandNow(command, options.silent === true))
+  public async sendCommand(command: string, options: { silent?: boolean; timeoutMs?: number } = {}): Promise<string> {
+    const operation = this.commandQueue.then(() => this.sendCommandNow(command, options.silent === true, options.timeoutMs ?? RESPONSE_TIMEOUT_MS))
     this.commandQueue = operation.then(() => undefined, () => undefined)
     return operation
   }
 
-  private async sendCommandNow(command: string, silent: boolean): Promise<string> {
+  private async sendCommandNow(command: string, silent: boolean, timeoutMs: number): Promise<string> {
     if (!this.port || !this.isConnected()) {
       throw new Error('No physical Arduino is currently connected.')
     }
@@ -294,7 +294,7 @@ class MicroBoardSerialService {
         const waiterIndex = this.responseWaiters.indexOf(waiter)
         if (waiterIndex >= 0) this.responseWaiters.splice(waiterIndex, 1)
         rejectResponse(new Error(`No response received for: ${normalizedCommand}`))
-      }, RESPONSE_TIMEOUT_MS),
+      }, timeoutMs),
     }
     this.responseWaiters.push(waiter)
 

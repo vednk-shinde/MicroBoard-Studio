@@ -12,6 +12,7 @@ import { RegisterViewer } from './components/RegisterViewer'
 import { LanguageSwitcher } from './components/LanguageSwitcher'
 import { analogPins, digitalPins, getPin, pinMap, type PeripheralName, type PinLevel, type PinMode } from './data/pins'
 import { microBoardSerial, type SerialInfo } from './services/serial'
+import { scanWiredPins } from './services/pinScan'
 import { COMPONENT_LESSONS } from './data/componentLessons'
 import { lessonKeyFor, mergeProjectComponents, type InventoryPart, type ProjectComponent } from './sim/componentDetection'
 import './App.css'
@@ -86,6 +87,8 @@ function parseReadResponse(response: string, expectedPin: number): BoardState | 
   return { mode: match[2] as PinMode, level: match[3] as PinLevel }
 }
 
+type PinScanState = { state: 'idle' | 'scanning' | 'done' | 'unavailable'; wired: string[]; skipped: string[] }
+
 function sameBoardStates(a: Record<string, BoardState>, b: Record<string, BoardState>): boolean {
   const keys = Object.keys(b)
   if (Object.keys(a).length !== keys.length) return false
@@ -124,6 +127,8 @@ function App() {
   const [physicalPins, setPhysicalPins] = useState<Record<string, BoardState>>({})
   // Set when the board answers STATUS with something that isn't MicroBoard's firmware (another sketch is running).
   const [firmwareNote, setFirmwareNote] = useState<string | null>(null)
+  const [pinScan, setPinScan] = useState<PinScanState>({ state: 'idle', wired: [], skipped: [] })
+  const scanRun = useRef(0)
   const [serialInfo, setSerialInfo] = useState<SerialInfo>(microBoardSerial.getSnapshot())
   const [toast, setToast] = useState('')
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
@@ -162,10 +167,15 @@ function App() {
     if (serialInfo.error) setToast(serialInfo.error)
   }, [serialInfo.error])
 
+  // The Arduino resets when the port opens and needs about 2 s to boot, so a STATUS sent straight away is lost.
+  // Wait, read the status (a few quick tries), then scan which pins have something wired to them.
   useEffect(() => {
-    if (isPhysicalConnected) {
-      void refreshPhysicalStatus()
+    if (!isPhysicalConnected) {
+      scanRun.current += 1
+      setPinScan({ state: 'idle', wired: [], skipped: [] })
+      return
     }
+    void scanBoard(2000)
   }, [isPhysicalConnected])
 
   useEffect(() => {
@@ -220,6 +230,45 @@ function App() {
   function selectAndExplore(pinId: string) {
     setSelectedPin(pinId)
     navigate('pin-explorer')
+  }
+
+  async function scanBoard(delayMs: number) {
+    const run = ++scanRun.current
+    const stale = () => run !== scanRun.current
+    const send = (command: string) => microBoardSerial.sendCommand(command, { silent: true, timeoutMs: 2500 })
+    setPinScan({ state: 'scanning', wired: [], skipped: [] })
+    try {
+      if (delayMs) await new Promise((resolve) => window.setTimeout(resolve, delayMs))
+      let lastReply = '(no reply)'
+      for (let attempt = 0; attempt < 4; attempt++) {
+        if (stale()) return
+        try {
+          const reply = await microBoardSerial.sendCommand('STATUS', { silent: true, timeoutMs: 1500 })
+          const statuses = parseStatusResponse(reply)
+          if (statuses) {
+            setFirmwareNote(null)
+            setPhysicalPins(statuses)
+            const result = await scanWiredPins(send, statuses)
+            const after = parseStatusResponse(await send('STATUS'))
+            if (stale()) return
+            if (after) setPhysicalPins(after)
+            setPinScan({ state: 'done', ...result })
+            return
+          }
+          lastReply = reply
+        } catch (error) {
+          if (!(error instanceof Error) || !error.message.startsWith('No response')) throw error
+        }
+      }
+      if (!stale()) {
+        setFirmwareNote(lastReply)
+        setPinScan({ state: 'unavailable', wired: [], skipped: [] })
+      }
+    } catch (error) {
+      if (stale()) return
+      setPinScan({ state: 'unavailable', wired: [], skipped: [] })
+      setToast(error instanceof Error ? error.message : 'Pin scan failed.')
+    }
   }
 
   async function refreshPhysicalStatus() {
@@ -381,6 +430,7 @@ function App() {
           onSelectPin={selectAndExplore}
           serialInfo={serialInfo}
           physicalPins={physicalPins}
+          wiredPins={pinScan.wired}
           firmwareNote={firmwareNote}
           selectedPin={selectedPin}
           onRefreshStatus={() => void refreshPhysicalStatus()}
@@ -391,7 +441,7 @@ function App() {
       case 'settings':
         return <SettingsPage reducedMotion={reducedMotion} onChangeMotion={setReducedMotion} onReset={() => { setModes(initialState('INPUT')); setLevels(initialState('LOW')); setPhysicalPins({}); setToast('Virtual pin state reset.') }} />
       default:
-        return <Dashboard selectedPin={selectedPin} mode={modes[selectedPin]} level={levels[selectedPin]} ledOn={ledOn} serialInfo={serialInfo} serialAvailable={serialInfo.isAvailable} onNavigate={navigate} onSelectPin={selectAndExplore} onConnect={handleConnectArduino} />
+        return <Dashboard selectedPin={selectedPin} mode={modes[selectedPin]} level={levels[selectedPin]} ledOn={ledOn} serialInfo={serialInfo} serialAvailable={serialInfo.isAvailable} pinScan={pinScan} firmwareNote={firmwareNote} onScan={() => void scanBoard(0)} onNavigate={navigate} onSelectPin={selectAndExplore} onConnect={handleConnectArduino} />
     }
   }
 
@@ -477,7 +527,7 @@ function Sidebar({ page, onNavigate, mobileOpen, serialInfo }: { page: PageId; o
   </>
 }
 
-function Dashboard({ selectedPin, mode, level, ledOn, serialInfo, serialAvailable, onNavigate, onSelectPin, onConnect }: { selectedPin: string; mode: PinMode; level: PinLevel; ledOn: boolean; serialInfo: SerialInfo; serialAvailable: boolean; onNavigate: (page: PageId) => void; onSelectPin: (pinId: string) => void; onConnect: () => void }) {
+function Dashboard({ selectedPin, mode, level, ledOn, serialInfo, serialAvailable, pinScan, firmwareNote, onScan, onNavigate, onSelectPin, onConnect }: { selectedPin: string; mode: PinMode; level: PinLevel; ledOn: boolean; serialInfo: SerialInfo; serialAvailable: boolean; pinScan: PinScanState; firmwareNote: string | null; onScan: () => void; onNavigate: (page: PageId) => void; onSelectPin: (pinId: string) => void; onConnect: () => void }) {
   const { t } = useTranslation()
   const pin = getPin(selectedPin)
 
@@ -543,6 +593,32 @@ function Dashboard({ selectedPin, mode, level, ledOn, serialInfo, serialAvailabl
             {pin.id === 'D13' && <strong className={ledOn ? 'led-on' : ''}><Lightbulb size={13} /> LED {ledOn ? t('dashboard.ledOn') : t('dashboard.ledOff')}</strong>}
           </div>
         </section>
+        <section className="panel wired-pins-panel" aria-live="polite">
+          <div className="panel-heading">
+            <div><span className="eyebrow">CONNECTED BOARD</span><h2>Wired pins</h2></div>
+            {serialInfo.state === 'connected' && pinScan.state !== 'scanning' && <button className="text-link" type="button" onClick={onScan}>Scan again</button>}
+          </div>
+          {serialInfo.state !== 'connected' && <p className="empty-state">Connect your Arduino and MicroBoard will detect which pins have something wired to them.</p>}
+          {serialInfo.state === 'connected' && pinScan.state === 'scanning' && <p className="empty-state">Scanning pins D2 to D13…</p>}
+          {serialInfo.state === 'connected' && pinScan.state === 'unavailable' && (
+            <p className="empty-state wired-warning">
+              Connected, but the board is not running the MicroBoard firmware{firmwareNote && firmwareNote !== '(no reply)' ? ` (it said: ${firmwareNote.slice(0, 50)})` : ''}, so pins can't be read. {' '}
+              <button className="text-link" type="button" onClick={() => onNavigate('hardware-monitor')}>See how to upload it</button>
+            </p>
+          )}
+          {serialInfo.state === 'connected' && pinScan.state === 'done' && (
+            <>
+              {pinScan.wired.length > 0
+                ? <div className="wired-pin-chips">{pinScan.wired.map((id) => <button type="button" key={id} className="wired-pin-chip" onClick={() => onSelectPin(id)}><i />{id}<small>{getPin(id).mcuPin}</small></button>)}</div>
+                : <p className="empty-state">No wired pins found on D2 to D13.</p>}
+              <small className="wired-note">
+                A pin is shown when something holds it LOW with the internal pull-up on (a wire to GND, an LED with its resistor, a pressed button, a sensor output that is low).
+                {pinScan.skipped.length > 0 && ` Not scanned because they are outputs: ${pinScan.skipped.join(', ')}.`}
+                {' '}Pins driven HIGH by a sensor look the same as empty pins, and D0/D1 are the USB serial pins.
+              </small>
+            </>
+          )}
+        </section>
         <section className="panel quick-panel">
           <div className="panel-heading"><div><span className="eyebrow">{t('dashboard.shortcuts')}</span><h2>{t('dashboard.quickActions')}</h2></div></div>
           <div className="quick-actions">
@@ -590,7 +666,7 @@ function Dashboard({ selectedPin, mode, level, ledOn, serialInfo, serialAvailabl
   </div>
 }
 
-function HardwareMonitor({ modes, levels, onSelectPin, serialInfo, physicalPins, firmwareNote, selectedPin, onRefreshStatus, onReadPin }: { modes: Record<string, PinMode>; levels: Record<string, PinLevel>; onSelectPin: (pinId: string) => void; serialInfo: SerialInfo; physicalPins: Record<string, BoardState>; firmwareNote: string | null; selectedPin: string; onRefreshStatus: () => void; onReadPin: (pinId: string) => void }) {
+function HardwareMonitor({ modes, levels, onSelectPin, serialInfo, physicalPins, wiredPins, firmwareNote, selectedPin, onRefreshStatus, onReadPin }: { modes: Record<string, PinMode>; levels: Record<string, PinLevel>; onSelectPin: (pinId: string) => void; serialInfo: SerialInfo; physicalPins: Record<string, BoardState>; wiredPins: string[]; firmwareNote: string | null; selectedPin: string; onRefreshStatus: () => void; onReadPin: (pinId: string) => void }) {
   const { t } = useTranslation()
   const physicalState = physicalPins[selectedPin] ?? { mode: null, level: null }
   const connected = serialInfo.state === 'connected'
@@ -672,8 +748,8 @@ function HardwareMonitor({ modes, levels, onSelectPin, serialInfo, physicalPins,
           {pins.map((item) => {
             const state = serialInfo.state === 'connected' ? (physicalPins[item.id] ?? { mode: null, level: null }) : { mode: modes[item.id], level: levels[item.id] }
             return (
-              <button className={`monitor-card${state.level === 'HIGH' ? ' is-high' : ''}${state.level === 'HIGH' && state.mode === 'OUTPUT' ? ' is-driving' : ''}${flashing.includes(item.id) ? ' just-changed' : ''}`} type="button" key={item.id} onClick={() => onSelectPin(item.id)}>
-                <div><strong>{item.id}</strong><i className={state.level === 'HIGH' ? 'active' : ''} /></div>
+              <button className={`monitor-card${state.level === 'HIGH' ? ' is-high' : ''}${state.level === 'HIGH' && state.mode === 'OUTPUT' ? ' is-driving' : ''}${flashing.includes(item.id) ? ' just-changed' : ''}${connected && wiredPins.includes(item.id) ? ' is-wired' : ''}`} type="button" key={item.id} onClick={() => onSelectPin(item.id)}>
+                <div><strong>{item.id}</strong>{connected && wiredPins.includes(item.id) && <em className="wired-badge">WIRED</em>}<i className={state.level === 'HIGH' ? 'active' : ''} /></div>
                 <span className="monitor-mcu">{item.mcuPin} <small>BIT {item.bit}</small></span>
                 <span className="monitor-mode">{state.mode ?? t('hardwareMonitor.unknown')}</span>
                 <small className="monitor-function">{item.functions.join(' · ')}</small>
