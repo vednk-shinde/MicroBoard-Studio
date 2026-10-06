@@ -122,6 +122,8 @@ function App() {
   const [modes, setModes] = useState<Record<string, PinMode>>(() => ({ ...initialState<PinMode>('INPUT'), D13: 'OUTPUT' }))
   const [levels, setLevels] = useState<Record<string, PinLevel>>(() => initialState<PinLevel>('LOW'))
   const [physicalPins, setPhysicalPins] = useState<Record<string, BoardState>>({})
+  // Set when the board answers STATUS with something that isn't MicroBoard's firmware (another sketch is running).
+  const [firmwareNote, setFirmwareNote] = useState<string | null>(null)
   const [serialInfo, setSerialInfo] = useState<SerialInfo>(microBoardSerial.getSnapshot())
   const [toast, setToast] = useState('')
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
@@ -166,6 +168,10 @@ function App() {
     }
   }, [isPhysicalConnected])
 
+  useEffect(() => {
+    if (!isPhysicalConnected) setFirmwareNote(null)
+  }, [isPhysicalConnected])
+
   // Live updates: while the Hardware Monitor is open and the board is connected, ask for STATUS every 700 ms so
   // pins changed by the sketch on the board (or by the buttons here) show up without pressing STATUS.
   useEffect(() => {
@@ -179,12 +185,20 @@ function App() {
       try {
         const response = await microBoardSerial.sendCommand('STATUS', { silent: true })
         const next = parseStatusResponse(response)
-        if (!next) throw new Error(`Malformed STATUS response: ${response}`)
+        if (!next) {
+          // Another sketch is answering (or printing its own messages): say so instead of showing UNKNOWN silently.
+          if (!cancelled) setFirmwareNote(response)
+          return
+        }
         failures = 0
-        if (!cancelled) setPhysicalPins((current) => (sameBoardStates(current, next) ? current : next))
-      } catch {
+        if (!cancelled) {
+          setFirmwareNote(null)
+          setPhysicalPins((current) => (sameBoardStates(current, next) ? current : next))
+        }
+      } catch (error) {
         failures += 1
-        if (failures === 3 && !cancelled) setToast('Live updates are failing. Check the USB cable, then press STATUS.')
+        if (!cancelled && error instanceof Error && error.message.startsWith('No response')) setFirmwareNote('(no reply)')
+        else if (failures === 3 && !cancelled) setToast('Live updates are failing. Check the USB cable, then press STATUS.')
       } finally {
         busy = false
       }
@@ -213,10 +227,16 @@ function App() {
     try {
       const response = await microBoardSerial.sendCommand('STATUS')
       const nextStates = parseStatusResponse(response)
-      if (!nextStates) throw new Error(`Malformed STATUS response: ${response}`)
+      if (!nextStates) {
+        setFirmwareNote(response)
+        setToast('The board did not answer like the MicroBoard firmware. See the notice on this page.')
+        return
+      }
+      setFirmwareNote(null)
       setPhysicalPins(nextStates)
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unable to read Arduino status.'
+      if (message.startsWith('No response')) setFirmwareNote('(no reply)')
       setToast(message)
     }
   }
@@ -361,6 +381,7 @@ function App() {
           onSelectPin={selectAndExplore}
           serialInfo={serialInfo}
           physicalPins={physicalPins}
+          firmwareNote={firmwareNote}
           selectedPin={selectedPin}
           onRefreshStatus={() => void refreshPhysicalStatus()}
           onReadPin={handleReadPhysical}
@@ -569,7 +590,7 @@ function Dashboard({ selectedPin, mode, level, ledOn, serialInfo, serialAvailabl
   </div>
 }
 
-function HardwareMonitor({ modes, levels, onSelectPin, serialInfo, physicalPins, selectedPin, onRefreshStatus, onReadPin }: { modes: Record<string, PinMode>; levels: Record<string, PinLevel>; onSelectPin: (pinId: string) => void; serialInfo: SerialInfo; physicalPins: Record<string, BoardState>; selectedPin: string; onRefreshStatus: () => void; onReadPin: (pinId: string) => void }) {
+function HardwareMonitor({ modes, levels, onSelectPin, serialInfo, physicalPins, firmwareNote, selectedPin, onRefreshStatus, onReadPin }: { modes: Record<string, PinMode>; levels: Record<string, PinLevel>; onSelectPin: (pinId: string) => void; serialInfo: SerialInfo; physicalPins: Record<string, BoardState>; firmwareNote: string | null; selectedPin: string; onRefreshStatus: () => void; onReadPin: (pinId: string) => void }) {
   const { t } = useTranslation()
   const physicalState = physicalPins[selectedPin] ?? { mode: null, level: null }
   const connected = serialInfo.state === 'connected'
@@ -616,6 +637,22 @@ function HardwareMonitor({ modes, levels, onSelectPin, serialInfo, physicalPins,
         <div className="hardware-summary-item"><span>{t('hardwareMonitor.port')}</span><strong>{serialInfo.portName}</strong></div>
       </div>
       {serialInfo.error && <p className="serial-error-message" role="status">{serialInfo.error}</p>}
+      {connected && firmwareNote && (
+        <div className="firmware-notice" role="alert">
+          <strong>Connected, but this board is not running the MicroBoard firmware.</strong>
+          <p>
+            MicroBoard can only read pin states from a board that answers its <code>STATUS</code> command. {firmwareNote === '(no reply)'
+              ? 'This board did not answer at all.'
+              : <>This board replied: <code>{firmwareNote.slice(0, 80)}</code>, which looks like another sketch.</>}
+          </p>
+          <ol>
+            <li>Open <code>firmware/microboard_firmware.ino</code> (in the GitHub repo) in the Arduino IDE.</li>
+            <li>Select <b>Arduino Uno</b> and this port, then press Upload. This replaces the sketch currently on the board.</li>
+            <li>Close the Serial Monitor, come back here and press Connect again.</li>
+          </ol>
+          <small>Upload your own sketch again afterwards when you want to run it; the monitor only works while the MicroBoard firmware is on the board.</small>
+        </div>
+      )}
       <div className="command-response-grid">
         <div className="response-box"><span>{t('hardwareMonitor.lastCommand')}</span><strong>{serialInfo.lastCommand || 'None'}</strong></div>
         <div className="response-box"><span>{t('hardwareMonitor.lastResponse')}</span><strong>{serialInfo.lastResponse || t('hardwareMonitor.noResponseYet')}</strong></div>
