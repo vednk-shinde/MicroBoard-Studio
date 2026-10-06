@@ -1806,6 +1806,34 @@
   box-shadow: inset 0 0 0 2px rgba(255,255,255,0.08);
 }
 
+.monitor-card {
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+/* A pin that is HIGH glows; an OUTPUT pin that is driving HIGH (e.g. an LED) glows stronger. */
+.monitor-card.is-high {
+  border-color: rgba(142, 223, 182, 0.55);
+  box-shadow: 0 0 14px rgba(142, 223, 182, 0.28), inset 0 0 18px rgba(142, 223, 182, 0.08);
+}
+
+.monitor-card.is-driving {
+  border-color: rgba(237, 180, 109, 0.75);
+  box-shadow: 0 0 22px rgba(237, 180, 109, 0.5), inset 0 0 22px rgba(237, 180, 109, 0.12);
+}
+
+.monitor-card.just-changed {
+  animation: monitor-flash 1.1s ease-out;
+}
+
+@keyframes monitor-flash {
+  0% { transform: scale(1.04); box-shadow: 0 0 34px rgba(160, 239, 242, 0.9); }
+  100% { transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .monitor-card.just-changed { animation: none; }
+}
+
 .monitor-card i.active {
   background: var(--amber);
   box-shadow: 0 0 10px rgba(237, 180, 109, 0.7);

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Activity, ArrowRight, BookOpen, Cable, Camera, ChevronRight, CircleHelp, Code2, Cpu, Gauge, LayoutDashboard, Lightbulb, Menu, Settings2, Usb, X } from 'lucide-react'
 import { ArduinoBoard } from './components/ArduinoBoard'
@@ -86,6 +86,12 @@ function parseReadResponse(response: string, expectedPin: number): BoardState | 
   return { mode: match[2] as PinMode, level: match[3] as PinLevel }
 }
 
+function sameBoardStates(a: Record<string, BoardState>, b: Record<string, BoardState>): boolean {
+  const keys = Object.keys(b)
+  if (Object.keys(a).length !== keys.length) return false
+  return keys.every((key) => a[key]?.mode === b[key].mode && a[key]?.level === b[key].level)
+}
+
 function parseStatusResponse(response: string): Record<string, BoardState> | null {
   const tokens = response.trim().split(/\s+/)
   if (tokens.length !== 43 || tokens[0] !== 'STATUS') return null
@@ -159,6 +165,37 @@ function App() {
       void refreshPhysicalStatus()
     }
   }, [isPhysicalConnected])
+
+  // Live updates: while the Hardware Monitor is open and the board is connected, ask for STATUS every 700 ms so
+  // pins changed by the sketch on the board (or by the buttons here) show up without pressing STATUS.
+  useEffect(() => {
+    if (!isPhysicalConnected || page !== 'hardware-monitor') return
+    let cancelled = false
+    let busy = false
+    let failures = 0
+    const poll = async () => {
+      if (busy || document.hidden) return
+      busy = true
+      try {
+        const response = await microBoardSerial.sendCommand('STATUS', { silent: true })
+        const next = parseStatusResponse(response)
+        if (!next) throw new Error(`Malformed STATUS response: ${response}`)
+        failures = 0
+        if (!cancelled) setPhysicalPins((current) => (sameBoardStates(current, next) ? current : next))
+      } catch {
+        failures += 1
+        if (failures === 3 && !cancelled) setToast('Live updates are failing. Check the USB cable, then press STATUS.')
+      } finally {
+        busy = false
+      }
+    }
+    void poll()
+    const timer = window.setInterval(() => void poll(), 700)
+    return () => {
+      cancelled = true
+      window.clearInterval(timer)
+    }
+  }, [isPhysicalConnected, page])
 
   function navigate(nextPage: PageId) {
     setPage(nextPage)
@@ -535,6 +572,26 @@ function Dashboard({ selectedPin, mode, level, ledOn, serialInfo, serialAvailabl
 function HardwareMonitor({ modes, levels, onSelectPin, serialInfo, physicalPins, selectedPin, onRefreshStatus, onReadPin }: { modes: Record<string, PinMode>; levels: Record<string, PinLevel>; onSelectPin: (pinId: string) => void; serialInfo: SerialInfo; physicalPins: Record<string, BoardState>; selectedPin: string; onRefreshStatus: () => void; onReadPin: (pinId: string) => void }) {
   const { t } = useTranslation()
   const physicalState = physicalPins[selectedPin] ?? { mode: null, level: null }
+  const connected = serialInfo.state === 'connected'
+
+  // Pins whose mode or level just changed flash briefly, so you can see what the board did.
+  const [flashing, setFlashing] = useState<string[]>([])
+  const previous = useRef<Record<string, BoardState>>({})
+  useEffect(() => {
+    if (!connected) {
+      previous.current = {}
+      return
+    }
+    const changed = Object.keys(physicalPins).filter((id) => {
+      const before = previous.current[id]
+      return before && (before.mode !== physicalPins[id].mode || before.level !== physicalPins[id].level)
+    })
+    previous.current = physicalPins
+    if (!changed.length) return
+    setFlashing(changed)
+    const timer = window.setTimeout(() => setFlashing([]), 1100)
+    return () => window.clearTimeout(timer)
+  }, [physicalPins, connected])
 
   return <div className="page-stack">
     <div className="page-title-row">
@@ -572,13 +629,13 @@ function HardwareMonitor({ modes, levels, onSelectPin, serialInfo, physicalPins,
       <section className="panel monitor-panel" key={label}>
         <div className="panel-heading">
           <div><span className="eyebrow">{label}</span><h2>{pins.length} pins</h2></div>
-          <span className="monitor-note">{serialInfo.state === 'connected' ? t('hardwareMonitor.realBoardState') : t('hardwareMonitor.simulationValue')}</span>
+          <span className="monitor-note">{serialInfo.state === 'connected' ? `${t('hardwareMonitor.realBoardState')} · live` : t('hardwareMonitor.simulationValue')}</span>
         </div>
         <div className="monitor-grid">
           {pins.map((item) => {
             const state = serialInfo.state === 'connected' ? (physicalPins[item.id] ?? { mode: null, level: null }) : { mode: modes[item.id], level: levels[item.id] }
             return (
-              <button className="monitor-card" type="button" key={item.id} onClick={() => onSelectPin(item.id)}>
+              <button className={`monitor-card${state.level === 'HIGH' ? ' is-high' : ''}${state.level === 'HIGH' && state.mode === 'OUTPUT' ? ' is-driving' : ''}${flashing.includes(item.id) ? ' just-changed' : ''}`} type="button" key={item.id} onClick={() => onSelectPin(item.id)}>
                 <div><strong>{item.id}</strong><i className={state.level === 'HIGH' ? 'active' : ''} /></div>
                 <span className="monitor-mcu">{item.mcuPin} <small>BIT {item.bit}</small></span>
                 <span className="monitor-mode">{state.mode ?? t('hardwareMonitor.unknown')}</span>

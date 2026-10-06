@@ -15,6 +15,8 @@ const DEFAULT_BAUD_RATE = 115200
 const RESPONSE_TIMEOUT_MS = 5000
 
 type ResponseWaiter = {
+  /** Background polling: its command and response aren't shown in the Last command / Last response boxes. */
+  silent: boolean
   resolve: (value: string) => void
   reject: (reason: Error) => void
   timer: ReturnType<typeof setTimeout>
@@ -101,8 +103,10 @@ class MicroBoardSerialService {
     const trimmed = line.trim()
     if (!trimmed || trimmed === 'READY') return
 
-    this.currentInfo.lastResponse = trimmed
-    this.emit()
+    if (!this.responseWaiters[0]?.silent) {
+      this.currentInfo.lastResponse = trimmed
+      this.emit()
+    }
 
     if (this.responseWaiters.length > 0) {
       const { resolve, timer } = this.responseWaiters.shift()!
@@ -257,13 +261,13 @@ class MicroBoardSerialService {
     }
   }
 
-  public async sendCommand(command: string): Promise<string> {
-    const operation = this.commandQueue.then(() => this.sendCommandNow(command))
+  public async sendCommand(command: string, options: { silent?: boolean } = {}): Promise<string> {
+    const operation = this.commandQueue.then(() => this.sendCommandNow(command, options.silent === true))
     this.commandQueue = operation.then(() => undefined, () => undefined)
     return operation
   }
 
-  private async sendCommandNow(command: string): Promise<string> {
+  private async sendCommandNow(command: string, silent: boolean): Promise<string> {
     if (!this.port || !this.isConnected()) {
       throw new Error('No physical Arduino is currently connected.')
     }
@@ -283,6 +287,7 @@ class MicroBoardSerialService {
       rejectResponse = reject
     })
     const waiter: ResponseWaiter = {
+      silent,
       resolve: resolveResponse,
       reject: rejectResponse,
       timer: setTimeout(() => {
@@ -294,8 +299,10 @@ class MicroBoardSerialService {
     this.responseWaiters.push(waiter)
 
     try {
-      this.currentInfo.lastCommand = normalizedCommand
-      this.emit()
+      if (!silent) {
+        this.currentInfo.lastCommand = normalizedCommand
+        this.emit()
+      }
       await writer.write(payload)
     } catch (error) {
       const waiterIndex = this.responseWaiters.indexOf(waiter)
